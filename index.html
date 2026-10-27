@@ -361,6 +361,130 @@ function scheduledMinutes({ year, month, holidays = [], dailyMinutes = 480, offD
   return { days, minutes: days * dailyMinutes };
 }
 
+/* ---- leave.js ---- */
+
+const DEFAULT_LEAVE_POLICY = {
+  basis: 'hire_date',          // 'hire_date'(입사일) | 'fiscal_year'(회계연도)
+  fiscalYearStartMonth: 1,     // 회계연도 시작 월
+  prorateRounding: 'ceil',     // 비례 연차 0.5일 단위 처리: ceil | round | floor
+};
+
+function roundHalf(x, mode) {
+  const v = x * 2;
+  const r = mode === 'floor' ? Math.floor(v) : mode === 'round' ? Math.round(v) : Math.ceil(v);
+  return r / 2;
+}
+// 근로기준법 제60조: 1년 이상 15일, 3년차부터 2년마다 1일 가산, 최대 25일
+function annualDaysForServiceYear(n) {
+  return Math.min(25, 15 + Math.floor((n - 1) / 2));
+}
+const expiry = (date) => addDays(addMonths(date, 12), -1);
+
+/**
+ * 연차 발생 내역 생성 (출근율 80% 이상/월 개근을 가정. 미충족은 관리자가 수동 조정)
+ * 반환: [{date, days, kind: 'monthly'|'annual'|'prorated', expires}]
+ */
+function generateGrants(hireDate, asOf, policy = DEFAULT_LEAVE_POLICY) {
+  return policy.basis === 'fiscal_year'
+    ? grantsFiscal(hireDate, asOf, policy)
+    : grantsHireDate(hireDate, asOf);
+}
+
+function grantsHireDate(hire, asOf) {
+  const grants = [];
+  const oneYear = addMonths(hire, 12);
+  for (let k = 1; k <= 11; k++) {
+    const date = addMonths(hire, k);
+    if (date >= oneYear || date > asOf) break;
+    grants.push({ date, days: 1, kind: 'monthly', expires: expiry(date) });
+  }
+  for (let n = 1; ; n++) {
+    const date = addMonths(hire, 12 * n);
+    if (date > asOf) break;
+    grants.push({ date, days: annualDaysForServiceYear(n), kind: 'annual', expires: expiry(date) });
+  }
+  return grants;
+}
+
+function grantsFiscal(hire, asOf, policy) {
+  const grants = [];
+  const m = String(policy.fiscalYearStartMonth).padStart(2, '0');
+  const hireYear = Number(hire.slice(0, 4));
+  let firstStart = `${hireYear}-${m}-01`;
+  if (firstStart <= hire) firstStart = `${hireYear + 1}-${m}-01`;
+
+  // 입사 첫 회계연도: 만 1개월 개근마다 1일 (최대 11일)
+  for (let k = 1; k <= 11; k++) {
+    const date = addMonths(hire, k);
+    if (date >= firstStart || date > asOf) break;
+    grants.push({ date, days: 1, kind: 'monthly', expires: expiry(date) });
+  }
+  // 첫 회계연도 시작일: 입사일~회계연도 말 재직일수 비례 (15일 상한)
+  if (firstStart <= asOf) {
+    const prorated = Math.min(15, roundHalf((15 * diffDays(hire, firstStart)) / 365, policy.prorateRounding));
+    grants.push({ date: firstStart, days: prorated, kind: 'prorated', expires: expiry(firstStart) });
+  }
+  // 이후 회계연도 시작일: 시작일 시점 만 근속연수 기준
+  for (let i = 1; ; i++) {
+    const date = `${Number(firstStart.slice(0, 4)) + i}-${m}-01`;
+    if (date > asOf) break;
+    const years = Math.max(1, fullYearsBetween(hire, date));
+    grants.push({ date, days: annualDaysForServiceYear(years), kind: 'annual', expires: expiry(date) });
+  }
+  return grants;
+}
+
+/**
+ * 잔여 연차 계산: 사용분은 사용일에 유효한 발생분 중 소멸일이 빠른 것부터 차감(FIFO).
+ * @param grants [{date, days, expires}]  (수동 조정 포함)
+ * @param used   [{date, days}]           승인된 사용 내역
+ */
+function leaveBalance({ grants, used, asOf }) {
+  const pool = grants
+    .filter((g) => g.date <= asOf)
+    .map((g) => ({ ...g, remaining: g.days }))
+    .sort((a, b) => a.expires.localeCompare(b.expires));
+  let shortage = 0;
+  const usedSoFar = used.filter((x) => x.date <= asOf).sort((a, b) => a.date.localeCompare(b.date));
+  for (const u of usedSoFar) {
+    let need = u.days;
+    for (const g of pool) {
+      if (need <= 0) break;
+      if (g.date <= u.date && u.date <= g.expires && g.remaining > 0) {
+        const take = Math.min(g.remaining, need);
+        g.remaining -= take;
+        need -= take;
+      }
+    }
+    shortage += need; // 발생분 부족(마이너스 연차)
+  }
+  const available = pool.filter((g) => g.expires >= asOf).reduce((s, g) => s + g.remaining, 0);
+  const granted = grants.filter((g) => g.date <= asOf).reduce((s, g) => s + g.days, 0);
+  const usedTotal = usedSoFar.reduce((s, x) => s + x.days, 0);
+  return { granted, used: usedTotal, remaining: available - shortage, shortage };
+}
+
+/**
+ * 퇴직 시 연차 재정산 (회사가 회계연도 기준으로 부여한 경우: "퇴직 시에는 입사일 기준으로 재정산").
+ * 입사일 기준으로 퇴직일까지 발생했어야 할 연차 총량과, 회계연도 기준으로 실제 부여한 총량을 비교한다.
+ *  - extraDays > 0 : 입사일 기준이 더 많음 → 회사가 추가로 인정해야 할 일수
+ *  - extraDays < 0 : 회계연도 기준으로 더 많이 부여함 → 초과 부여분(회수 여부는 회사 규정·노무 검토 사항)
+ *  - unusedHireBasis: 입사일 기준 총량에서 사용한 일수를 뺀 값 (연차수당 정산 대상 일수의 기준)
+ * 주의: 계산 보조 도구이며, 연차수당 지급 여부·금액은 인사 담당자·노무사가 확정해야 한다.
+ */
+function retirementSettlement({ hireDate, retireDate, usedDays, leavePolicy = DEFAULT_LEAVE_POLICY }) {
+  const sum = (gs) => gs.reduce((s, g) => s + g.days, 0);
+  const hireBasis = sum(generateGrants(hireDate, retireDate, { ...leavePolicy, basis: 'hire_date' }));
+  const fiscalBasis = sum(generateGrants(hireDate, retireDate, { ...leavePolicy, basis: 'fiscal_year' }));
+  return {
+    hireBasisTotal: hireBasis,
+    fiscalBasisTotal: fiscalBasis,
+    extraDays: hireBasis - fiscalBasis,
+    unusedHireBasis: hireBasis - usedDays,
+    unusedFiscalBasis: fiscalBasis - usedDays,
+  };
+}
+
 </script>
 <script>
 // 근태·휴가 — Supabase 연결 버전.
@@ -443,7 +567,7 @@ const ERR_EXACT = {
   'already clocked out': '이미 퇴근했습니다.', 'record already exists': '그 날짜에 이미 기록이 있습니다. 수정 요청을 이용해 주세요.', 'no record on that date': '그 날짜에 기록이 없습니다.',
   'full-day leave on that date': '하루 종일 휴가인 날에는 기록을 만들 수 없습니다.', 'invalid times': '퇴근 시각이 출근 시각보다 늦어야 합니다.', 'date out of range': '최근 60일 안의 지난 날짜만 요청할 수 있습니다.',
   'a pending request already exists for that date': '같은 날짜에 처리 대기 중인 요청이 있습니다.', 'not the approver': '이 요청을 처리할 권한이 없습니다.', 'request is not pending': '이미 처리된 요청입니다.',
-  'cannot cancel': '취소할 수 없는 요청입니다.', forbidden: '권한이 없습니다.', 'inactive or unknown user': '사용할 수 없는 계정입니다. 관리자에게 문의해 주세요.',
+  'cannot cancel': '취소할 수 없는 요청입니다.', 'already registered': '이미 직원으로 등록된 계정입니다.', 'invalid name': '이름을 입력해 주세요. (50자 이내)', 'email domain not allowed': '회사에서 허용한 이메일 주소로만 가입을 요청할 수 있습니다.', 'too many requests': '요청이 너무 많습니다. 내일 다시 시도해 주세요.', 'a pending request already exists': '이미 처리 대기 중인 가입 요청이 있습니다.', 'invalid hire date': '입사일을 올바르게 입력해 주세요. (오늘 이후는 불가)', 'org required': '소속을 선택해 주세요.', 'invalid role': '권한 값이 올바르지 않습니다.', 'request not found': '요청을 찾을 수 없습니다.', forbidden: '권한이 없습니다.', 'inactive or unknown user': '사용할 수 없는 계정입니다. 관리자에게 문의해 주세요.',
 };
 function errText(e) {
   const m = (e && e.message) || '';
@@ -466,6 +590,7 @@ const S = {
   today: seoulToday(), cal: null, rec: null, seg: 'mine',
   recs: {}, lv: {}, bal: null, grants: [], myLeave: [], myAtt: [], inboxLeave: [], inboxAtt: [], takenFuture: new Set(),
   draft: null, adraft: null, loaded: new Set(),
+  authMode: 'login', signupReq: null, signups: [], lastEmail: '', info: '',
 };
 S.cal = { y: +S.today.slice(0, 4), m: +S.today.slice(5, 7) };
 S.rec = { ...S.cal };
@@ -533,6 +658,11 @@ async function loadRequests() {
   ]);
   S.myLeave = ml.map((r) => ({ ...r, kind: 'leave' })); S.myAtt = ma.map((r) => ({ ...r, kind: 'attendance' }));
   S.inboxLeave = il.map((r) => ({ ...r, kind: 'leave' })); S.inboxAtt = ia.map((r) => ({ ...r, kind: 'attendance' }));
+  await loadSignups();
+}
+async function loadSignups() {
+  if (!S.me || S.me.role !== 'admin') { S.signups = []; return; }
+  S.signups = await rest('signup_requests', 'select=*&status=eq.pending&order=created_at');
 }
 async function loadLeave() {
   const uid = session.user.id;
@@ -551,6 +681,7 @@ async function refreshAll() {
 /* ---------- 화면 조각 ---------- */
 const header = (o) => `<header class="hdr">${o.back ? `<button class="ib" data-a="back" aria-label="뒤로">${ico('back')}</button>` : `<button class="ib menu-btn" data-a="drawer" aria-label="메뉴">${ico('menu')}</button>`}
   ${o.logo ? '<div class="logo">근태·휴가</div><div class="ttl onlydesk">홈</div>' : `<div class="ttl">${esc(o.title)}</div>`}${o.right || ''}</header>`;
+const signupCount = () => (S.me && S.me.role === 'admin' ? S.signups.length : 0);
 const pendingCount = () => [...S.inboxLeave, ...S.inboxAtt].filter((r) => r.status === 'pending').length;
 const NAV = [['home', '홈', 'home'], ['requests', '요청', 'inbox'], ['schedule', '월 근무', 'cal'], ['records', '출퇴근기록', 'clock'], ['leave', '휴가', 'plane']];
 function tabbar() {
@@ -560,6 +691,7 @@ function tabbar() {
 function sidebar() {
   const n = pendingCount();
   return `<aside class="side" aria-label="메뉴"><div class="brand">근태·휴가</div><nav>${NAV.map(([k, l, i]) => `<button class="navbtn ${S.tab === k && !S.stack.length ? 'on' : ''}" data-a="tab" data-k="${k}">${ico(i)}<span>${l}</span>${k === 'requests' ? `<span class="badge ${n ? '' : 'gray'}">${n}</span>` : ''}</button>`).join('')}</nav>
+    ${S.me.role === 'admin' ? `<nav><button class="navbtn" data-a="signups">${ico('inbox')}<span>가입 요청</span><span class="badge ${signupCount() ? '' : 'gray'}">${signupCount()}</span></button></nav>` : ''}
     <div class="sidefoot"><div class="who"><b>${esc(S.me.name)}</b><div class="muted small">${esc(orgOf(S.me.org_id)?.name ?? '소속 없음')}${S.me.role === 'admin' ? ' · 관리자' : ''}</div></div>
     <button class="navbtn small" data-a="logout">로그아웃</button></div></aside>`;
 }
@@ -675,7 +807,8 @@ function requestsScreen() {
   const all = (a, b) => [...a, ...b].sort((x, y) => y.created_at.localeCompare(x.created_at));
   const list = S.seg === 'inbox' ? all(S.inboxLeave, S.inboxAtt).sort((a, b) => (b.status === 'pending') - (a.status === 'pending')) : all(S.myLeave, S.myAtt);
   const n = pendingCount();
-  return { header: header({ title: '요청' }), cls: 'narrow', body: `<div class="seg"><button class="${S.seg === 'mine' ? 'on' : ''}" data-a="seg" data-k="mine">내 요청</button><button class="${S.seg === 'inbox' ? 'on' : ''}" data-a="seg" data-k="inbox">승인 대기 ${n}</button></div>
+  const banner = signupCount() ? `<button class="card rowbtn" style="margin-bottom:12px;color:var(--primary)" data-a="signups"><span>가입 요청 ${signupCount()}건이 승인을 기다립니다</span><span class="chev">${ico('chev')}</span></button>` : '';
+  return { header: header({ title: '요청' }), cls: 'narrow', body: `${banner}<div class="seg"><button class="${S.seg === 'mine' ? 'on' : ''}" data-a="seg" data-k="mine">내 요청</button><button class="${S.seg === 'inbox' ? 'on' : ''}" data-a="seg" data-k="inbox">승인 대기 ${n}</button></div>
     <div class="card flush">${list.map((r) => `<button class="rowbtn" style="font-weight:500;border-top:1px solid var(--line)" data-a="req" data-k="${r.kind}" data-id="${r.id}"><div><div>${S.seg === 'inbox' ? `<b>${esc(person(r.user_id)?.name ?? '')}</b> · ` : ''}${esc(reqTitle(r))}</div><div class="muted small">${reqWhen(r)} · 승인권자 ${esc(person(r.approver_id)?.name ?? '')}</div></div><span class="chip ${badge(r.status)}" style="margin-left:auto">${statusKo[r.status]}</span></button>`).join('') || '<div class="empty">요청이 없습니다.</div>'}</div>` };
 }
 function requestDetail(p) {
@@ -764,8 +897,19 @@ function attForm() {
     ${ap ? `<div class="muted small" style="padding:6px 16px">${esc(approverTitle(ap.id))}</div>` : ''}</div>` };
 }
 
+function signupsScreen() {
+  const today = S.today;
+  const cards = S.signups.map((r) => `<div class="card"><h3>${esc(r.name)}</h3><div class="muted small">${esc(r.email)} · ${String(r.created_at).slice(0, 10)}</div>
+    ${r.note ? `<div style="margin:8px 0">${esc(r.note)}</div>` : ''}
+    <div class="field" style="margin-top:12px"><label for="so-${r.id}">소속</label><select id="so-${r.id}"><option value="">선택</option>${S.orgs.map((o) => `<option value="${o.id}">${esc(o.name)}</option>`).join('')}</select></div>
+    <div class="field"><label for="sh-${r.id}">입사일</label><input id="sh-${r.id}" type="date" max="${today}"></div>
+    <div class="field"><label for="sr-${r.id}">권한</label><select id="sr-${r.id}"><option value="member">일반 직원</option><option value="admin">관리자</option></select></div>
+    <div class="field"><label for="sx-${r.id}">반려 사유 (반려할 때만)</label><input id="sx-${r.id}" type="text" placeholder="선택"></div>
+    <div class="btns"><button class="btn danger" data-a="rejectSignup" data-id="${r.id}">반려</button><button class="btn primary" data-a="approveSignup" data-id="${r.id}">승인</button></div></div>`).join('');
+  return { header: header({ back: true, title: '가입 요청' }), cls: 'narrow', body: cards || '<div class="empty">처리할 가입 요청이 없습니다.</div>' };
+}
 const TABS = { home: homeScreen, schedule: scheduleScreen, records: recordsScreen, leave: leaveScreen, requests: requestsScreen };
-const PAGES = { leave1: leaveStep1, leave2: leaveStep2, att: attForm, req: requestDetail };
+const PAGES = { signups: signupsScreen, leave1: leaveStep1, leave2: leaveStep2, att: attForm, req: requestDetail };
 
 /* ---------- 시트 ---------- */
 function geoMessage(res) {
@@ -801,6 +945,7 @@ function renderSheet() {
   if (sh.k === 'drawer') {
     return `<div class="sheetbg" style="justify-content:flex-start;align-items:stretch" data-a="closeSheet"><div class="drawer" role="dialog" aria-modal="true" data-stop="1">
       <div style="padding:0 20px 14px"><b style="font-size:18px">${esc(S.me.name)}</b><div class="muted small">${esc(orgOf(S.me.org_id)?.name ?? '소속 없음')}${S.me.role === 'admin' ? ' · 관리자' : ''}</div></div>
+      ${S.me.role === 'admin' ? `<button class="si" data-a="signups">가입 요청 (${signupCount()})</button>` : ''}
       <button class="si" data-a="reload">새로고침</button><button class="si" data-a="logout">로그아웃</button><button class="si" data-a="closeSheet">닫기</button></div></div>`;
   }
   return '';
@@ -809,12 +954,28 @@ function renderSheet() {
 /* ---------- 로그인 화면 ---------- */
 function authScreen() {
   if (S.view === 'boot') return `<div class="login"><div class="empty">${spinner}</div></div>`;
-  if (S.view === 'noprofile') return `<div class="login"><h1>직원 등록이 필요합니다</h1><div class="card"><p>로그인은 되었지만 직원 정보가 등록되어 있지 않습니다. 관리자에게 이 계정을 직원으로 등록해 달라고 요청해 주세요.</p><div class="muted small">계정: ${esc(session && session.user ? session.user.email : '')}</div><div class="btns"><button class="btn block" data-a="logout">다른 계정으로 로그인</button></div></div></div>`;
-  return `<div class="login"><h1>근태·휴가</h1><div class="muted">회사에서 안내받은 계정으로 로그인하세요.</div>
-    <div class="card" style="margin-top:20px"><label for="em" style="margin-top:0">이메일</label><input id="em" type="email" inputmode="email" autocomplete="username" autocapitalize="none" spellcheck="false" value="${esc(S.lastEmail || '')}">
-      <label for="pw">비밀번호</label><input id="pw" type="password" autocomplete="current-password">
+  if (S.view === 'noprofile') {
+    const r = S.signupReq, email = esc(session && session.user ? session.user.email : '');
+    if (r && r.status === 'pending') return `<div class="login"><h1>승인을 기다리는 중입니다</h1><div class="card"><p>가입 요청이 접수되었습니다. 관리자가 확인하고 승인하면 바로 사용할 수 있어요.</p>
+      <div class="kv"><b>이름</b><span>${esc(r.name)}</span></div><div class="kv"><b>계정</b><span>${email}</span></div><div class="kv"><b>요청일</b><span>${String(r.created_at).slice(0, 10)}</span></div>
+      <div class="btns"><button class="btn primary" data-a="reloadSignup">승인 여부 확인</button><button class="btn" data-a="logout">로그아웃</button></div></div></div>`;
+    return `<div class="login"><h1>가입 요청</h1><div class="muted">로그인은 되었지만 아직 직원으로 등록되지 않았어요. 이름을 적어 관리자에게 승인을 요청하세요.</div>
+      ${r && r.status === 'rejected' ? `<div class="card" style="margin-top:16px;color:var(--red)">이전 요청이 반려되었습니다.${r.reject_reason ? ` 사유: ${esc(r.reject_reason)}` : ''} 내용을 확인하고 다시 요청할 수 있어요.</div>` : ''}
+      <div class="card" style="margin-top:16px"><div class="muted small">계정: ${email}</div>
+        <label for="su-name">이름 (필수)</label><input id="su-name" type="text" maxlength="50" autocomplete="name" value="${esc(S.lastName || '')}">
+        <label for="su-note">소속·메모 (선택)</label><input id="su-note" type="text" maxlength="300" placeholder="예: 비즈니스솔루션팀">
+        ${S.authError ? `<div class="err" role="alert">${esc(S.authError)}</div>` : ''}
+        <div class="btns"><button class="btn primary" data-a="requestSignup" ${S.busy ? 'disabled' : ''}>${S.busy ? '요청 중…' : '가입 요청 보내기'}</button><button class="btn" data-a="logout">로그아웃</button></div></div></div>`;
+  }
+  const signup = S.authMode === 'signup';
+  return `<div class="login"><h1>근태·휴가</h1><div class="muted">${signup ? '회사에서 쓰는 이메일로 계정을 만들고, 관리자의 승인을 받으세요.' : '회사에서 안내받은 계정으로 로그인하세요.'}</div>
+    <div class="seg" style="margin-top:16px"><button class="${!signup ? 'on' : ''}" data-a="setMode" data-k="login">로그인</button><button class="${signup ? 'on' : ''}" data-a="setMode" data-k="signup">계정 만들기</button></div>
+    <div class="card"><label for="em" style="margin-top:0">이메일</label><input id="em" type="email" inputmode="email" autocomplete="username" autocapitalize="none" spellcheck="false" value="${esc(S.lastEmail || '')}">
+      <label for="pw">비밀번호${signup ? ' (8자 이상)' : ''}</label><input id="pw" type="password" autocomplete="${signup ? 'new-password' : 'current-password'}">
+      ${signup ? '<label for="pw2">비밀번호 확인</label><input id="pw2" type="password" autocomplete="new-password">' : ''}
       ${S.authError ? `<div class="err" role="alert">${esc(S.authError)}</div>` : ''}
-      <div class="btns"><button class="btn primary" data-a="login" ${S.busy ? 'disabled' : ''}>${S.busy ? '로그인 중…' : '로그인'}</button></div></div></div>`;
+      ${S.info ? `<div class="muted" style="margin-top:12px" role="status">${esc(S.info)}</div>` : ''}
+      <div class="btns"><button class="btn primary" data-a="${signup ? 'signup' : 'login'}" ${S.busy ? 'disabled' : ''}>${S.busy ? '처리 중…' : signup ? '계정 만들기' : '로그인'}</button></div></div></div>`;
 }
 
 /* ---------- 렌더 ---------- */
@@ -851,7 +1012,7 @@ async function bootMain() {
   try {
     S.today = seoulToday();
     const ok = await loadStatic();
-    if (!ok) { S.view = 'noprofile'; render(); return; }
+    if (!ok) { await loadSignupStatus(); S.view = 'noprofile'; render(); return; }
     S.view = 'main'; S.loadError = ''; render();
     await Promise.all([loadHomeData(), loadRequests(), loadLeave()]);
   } catch (e) {
@@ -861,10 +1022,14 @@ async function bootMain() {
   }
   render();
 }
+async function loadSignupStatus() {
+  try { const rows = await rest('signup_requests', `select=*&user_id=eq.${session.user.id}&order=created_at.desc&limit=1`); S.signupReq = rows[0] || null; }
+  catch (e) { if (e instanceof ApiError && e.status === 401) throw e; S.signupReq = null; }
+}
 async function doLogout(expired) {
   try { if (session && !expired) await fetch(CFG.url + '/auth/v1/logout', { method: 'POST', headers: { apikey: CFG.key, Authorization: `Bearer ${session.access_token}` } }); } catch (e) { /* 무시 */ }
   session = null; store.set(null);
-  Object.assign(S, { me: null, view: 'login', stack: [], sheet: null, tab: 'home', recs: {}, lv: {}, bal: null, myLeave: [], myAtt: [], inboxLeave: [], inboxAtt: [], loaded: new Set(), draft: null, adraft: null, authError: expired ? '로그인 시간이 지났습니다. 다시 로그인해 주세요.' : '' });
+  Object.assign(S, { me: null, view: 'login', stack: [], sheet: null, tab: 'home', recs: {}, lv: {}, bal: null, myLeave: [], myAtt: [], inboxLeave: [], inboxAtt: [], loaded: new Set(), draft: null, adraft: null, signupReq: null, signups: [], info: '', authMode: 'login', authError: expired ? '로그인 시간이 지났습니다. 다시 로그인해 주세요.' : '' });
   render();
 }
 
@@ -881,6 +1046,52 @@ const A = {
       render();
     }
   },
+  setMode: (e) => { S.authMode = e.k; S.authError = ''; S.info = ''; render(); },
+  signup: async () => {
+    const em = $('em').value.trim(), pw = $('pw').value, pw2 = $('pw2').value; S.lastEmail = em;
+    if (!em || !pw) { S.authError = '이메일과 비밀번호를 입력해 주세요.'; render(); return; }
+    if (pw.length < 8) { S.authError = '비밀번호는 8자 이상이어야 합니다.'; render(); return; }
+    if (pw !== pw2) { S.authError = '비밀번호 확인이 일치하지 않습니다.'; render(); return; }
+    S.busy = true; S.authError = ''; S.info = ''; render();
+    try {
+      const j = await authCall('/auth/v1/signup', { email: em, password: pw });
+      S.busy = false;
+      if (j && j.access_token) { saveSession(j); await bootMain(); return; }
+      S.authMode = 'login'; S.info = '확인 메일을 보냈습니다. 메일의 링크로 인증한 뒤 로그인해 주세요. 이미 가입한 이메일이라면 바로 로그인하세요.'; render();
+    } catch (e) {
+      S.busy = false;
+      const m = (e.body && (e.body.msg || e.body.message)) || '';
+      S.authError = /already registered|already been registered/i.test(m) ? '이미 가입된 이메일입니다. 로그인해 주세요.' : /signups? (not allowed|are disabled)|disabled/i.test(m) ? '지금은 계정 만들기가 닫혀 있습니다. 관리자에게 문의해 주세요.' : /password/i.test(m) ? '비밀번호가 규칙에 맞지 않습니다. 더 길고 복잡하게 만들어 주세요.' : errText(e);
+      render();
+    }
+  },
+  requestSignup: () => guard(async () => {
+    const name = $('su-name').value.trim(), note = $('su-note').value.trim(); S.lastName = name;
+    if (!name) { S.authError = '이름을 입력해 주세요.'; render(); return; }
+    S.busy = true; S.authError = ''; render();
+    try { await rpc('request_signup', { p_name: name, p_org: null, p_hire: null, p_note: note || null }); S.busy = false; await loadSignupStatus(); render(); toast('가입 요청을 보냈습니다.'); }
+    catch (e) { S.busy = false; if (e instanceof ApiError && e.status === 401) throw e; S.authError = errText(e); render(); }
+  }),
+  reloadSignup: () => guard(async () => { await bootMain(); }),
+  signups: () => guard(async () => { await loadSignups(); push('signups'); }),
+  approveSignup: (e) => guard(async () => {
+    const org = $('so-' + e.id).value, hire = $('sh-' + e.id).value, role = $('sr-' + e.id).value;
+    if (!org) return toast('소속을 선택해 주세요.');
+    if (!hire) return toast('입사일을 입력해 주세요.');
+    const uid = await rpc('approve_signup', { p_request: e.id, p_org: org, p_hire: hire, p_role: role });
+    let note = '승인했습니다.';
+    try {
+      const lr = S.settings.leave_rules || {};
+      const grants = generateGrants(hire, S.today, { basis: lr.basis || 'fiscal_year', fiscalYearStartMonth: lr.fiscal_start_month || 1, prorateRounding: lr.prorate_rounding || 'ceil' });
+      await rpc('admin_replace_auto_grants', { p_user: uid, p_grants: grants.map((g) => ({ kind: g.kind, date: g.date, days: g.days, expires: g.expires })) });
+      note = `승인했습니다. 연차 발생 내역 ${grants.length}건을 만들었습니다.`;
+    } catch (err) { note = '승인은 했지만 연차 발생 내역을 만들지 못했습니다. 관리자에게 알려 주세요.'; }
+    await loadSignups(); await loadStatic().catch(() => {}); render(); toast(note);
+  }),
+  rejectSignup: (e) => guard(async () => {
+    await rpc('reject_signup', { p_request: e.id, p_reason: ($('sx-' + e.id).value || '').trim() || null });
+    await loadSignups(); render(); toast('반려했습니다.');
+  }),
   logout: () => doLogout(false),
   reload: () => guard(async () => { S.sheet = null; S.loadError = ''; await refreshAll(); render(); }),
   tab: (e) => guard(async () => { S.tab = e.k; S.stack = []; S.sheet = null; render(); window.scrollTo && window.scrollTo(0, 0); await tabLoad(); }),
@@ -1007,7 +1218,7 @@ document.addEventListener('input', (e) => {
   if (i === 'reason') { S.draft.reason = e.target.value; const b = $('sendBtn'); if (b) b.disabled = !(S.draft.reason.trim() && S.draft.approverId) || S.busy; }
   if (i === 'areason') { S.adraft.reason = e.target.value; const b = $('sendBtnA'); if (b) b.disabled = !attOk() || S.busy; }
 });
-document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && S.view === 'login' && e.target && (e.target.id === 'em' || e.target.id === 'pw')) A.login(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && S.view === 'login' && e.target && (e.target.id === 'em' || e.target.id === 'pw' || e.target.id === 'pw2')) (S.authMode === 'signup' ? A.signup() : A.login()); });
 
 if (!CFG || !CFG.url || !CFG.key || /__SUPABASE/.test(CFG.url)) {
   $('app').innerHTML = '<div class="login"><h1>설정이 필요합니다</h1><div class="card">Supabase 주소와 공개용 키가 설정되지 않았습니다.</div></div>';
