@@ -212,6 +212,9 @@ h3{font-size:17px;margin:0}
 .login .err{color:var(--red);margin-top:12px;font-size:14px}
 .spin{display:inline-block;width:18px;height:18px;border:3px solid var(--line);border-top-color:var(--primary);border-radius:50%;animation:sp .8s linear infinite;vertical-align:-3px}
 @keyframes sp{to{transform:rotate(360deg)}}
+.cell .dot{display:block;width:6px;height:6px;border-radius:3px;background:var(--teal);margin:2px auto 0}
+.cell .mk{display:block;font-size:10px;line-height:1.1;margin-top:2px;color:var(--primary);font-weight:700}
+.cell.sel .mk{color:var(--primary-ink)}
 </style>
 </head>
 <body>
@@ -546,11 +549,11 @@ async function ensureSession() {
   }
   await refreshing;
 }
-async function api(method, path, body) {
+async function api(method, path, body, extra) {
   await ensureSession();
   const res = await fetch(CFG.url + path, {
     method,
-    headers: { apikey: CFG.key, Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+    headers: { apikey: CFG.key, Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json', ...(extra || {}) },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   const j = await parse(res);
@@ -559,6 +562,15 @@ async function api(method, path, body) {
 }
 const rest = (table, query) => api('GET', `/rest/v1/${table}?${query}`);
 const rpc = (fn, args) => api('POST', `/rest/v1/rpc/${fn}`, args || {});
+const send = (method, table, query, body, prefer) => api(method, `/rest/v1/${table}${query ? '?' + query : ''}`, body, prefer ? { Prefer: prefer } : undefined);
+async function restAll(table, query) {          // PostgREST는 한 번에 1000행까지만 주므로 나눠서 받는다
+  const out = [];
+  for (let off = 0; ; off += 1000) {
+    const rows = await rest(table, `${query}&limit=1000&offset=${off}`);
+    out.push(...rows);
+    if (rows.length < 1000) return out;
+  }
+}
 
 const ERR_EXACT = {
   'insufficient annual leave': '잔여 연차가 부족합니다.', 'invalid approver': '선택할 수 없는 승인권자입니다.', 'reason required': '사유를 입력해 주세요.',
@@ -567,7 +579,7 @@ const ERR_EXACT = {
   'already clocked out': '이미 퇴근했습니다.', 'record already exists': '그 날짜에 이미 기록이 있습니다. 수정 요청을 이용해 주세요.', 'no record on that date': '그 날짜에 기록이 없습니다.',
   'full-day leave on that date': '하루 종일 휴가인 날에는 기록을 만들 수 없습니다.', 'invalid times': '퇴근 시각이 출근 시각보다 늦어야 합니다.', 'date out of range': '최근 60일 안의 지난 날짜만 요청할 수 있습니다.',
   'a pending request already exists for that date': '같은 날짜에 처리 대기 중인 요청이 있습니다.', 'not the approver': '이 요청을 처리할 권한이 없습니다.', 'request is not pending': '이미 처리된 요청입니다.',
-  'cannot cancel': '취소할 수 없는 요청입니다.', 'already registered': '이미 직원으로 등록된 계정입니다.', 'invalid name': '이름을 입력해 주세요. (50자 이내)', 'email domain not allowed': '회사에서 허용한 이메일 주소로만 가입을 요청할 수 있습니다.', 'too many requests': '요청이 너무 많습니다. 내일 다시 시도해 주세요.', 'a pending request already exists': '이미 처리 대기 중인 가입 요청이 있습니다.', 'invalid hire date': '입사일을 올바르게 입력해 주세요. (오늘 이후는 불가)', 'org required': '소속을 선택해 주세요.', 'invalid role': '권한 값이 올바르지 않습니다.', 'request not found': '요청을 찾을 수 없습니다.', forbidden: '권한이 없습니다.', 'inactive or unknown user': '사용할 수 없는 계정입니다. 관리자에게 문의해 주세요.',
+  'cannot cancel': '취소할 수 없는 요청입니다.', 'cancel already requested': '이미 취소를 요청했습니다.', 'leave already started': '이미 시작한 휴가는 취소 요청할 수 없습니다.', 'cannot remove the last admin': '마지막 관리자는 권한이나 상태를 바꿀 수 없습니다.', 'unknown user': '직원을 찾을 수 없습니다.', 'items required': '날짜를 선택해 주세요.', 'too many items': '한 번에 62일까지 요청할 수 있습니다.', 'a pending schedule request already covers one of these dates': '이미 처리 대기 중인 일정 요청에 포함된 날짜가 있습니다.', 'already registered': '이미 직원으로 등록된 계정입니다.', 'invalid name': '이름을 입력해 주세요. (50자 이내)', 'email domain not allowed': '회사에서 허용한 이메일 주소로만 가입을 요청할 수 있습니다.', 'too many requests': '요청이 너무 많습니다. 내일 다시 시도해 주세요.', 'a pending request already exists': '이미 처리 대기 중인 가입 요청이 있습니다.', 'invalid hire date': '입사일을 올바르게 입력해 주세요. (오늘 이후는 불가)', 'org required': '소속을 선택해 주세요.', 'invalid role': '권한 값이 올바르지 않습니다.', 'request not found': '요청을 찾을 수 없습니다.', forbidden: '권한이 없습니다.', 'inactive or unknown user': '사용할 수 없는 계정입니다. 관리자에게 문의해 주세요.',
 };
 function errText(e) {
   const m = (e && e.message) || '';
@@ -577,7 +589,13 @@ function errText(e) {
   if ((x = /^not a workday: (.+)$/.exec(m))) return `${md(x[1])}은(는) 근무일이 아닙니다.`;
   if ((x = /^leave already exists on (.+)$/.exec(m))) return `${md(x[1])}에는 이미 휴가가 있습니다.`;
   if ((x = /^too many days \(max (\d+)\)$/.exec(m))) return `이 유형은 최대 ${x[1]}일까지 선택할 수 있습니다.`;
+  if ((x = /^no schedule on (.+)$/.exec(m))) return `${md(x[1])}에는 삭제할 근무일정이 없습니다.`;
+  if (/^date out of range: /.test(m)) return '오늘부터 120일 이내의 날짜만 요청할 수 있습니다.';
   if (/^date beyond current leave period/.test(m)) return '현재 연차 기간을 벗어난 날짜입니다.';
+  if (/duplicate key/.test(m)) return '이미 같은 값이 있습니다.';
+  if (/violates foreign key/.test(m)) return '다른 데이터에서 사용 중이라 지울 수 없습니다.';
+  if (/violates check constraint/.test(m)) return '입력값이 규칙에 맞지 않습니다.';
+  if (e && e.status === 403) return '권한이 없습니다.';
   if (e && e.status === 0) return '네트워크에 연결할 수 없습니다.';
   return m ? `오류: ${m}` : '알 수 없는 오류가 발생했습니다.';
 }
@@ -590,6 +608,7 @@ const S = {
   today: seoulToday(), cal: null, rec: null, seg: 'mine',
   recs: {}, lv: {}, bal: null, grants: [], myLeave: [], myAtt: [], inboxLeave: [], inboxAtt: [], takenFuture: new Set(),
   draft: null, adraft: null, loaded: new Set(),
+  sched: {}, schedT: {}, adm: {}, mySch: [], inboxSch: [], sdraft: null,
   authMode: 'login', signupReq: null, signups: [], lastEmail: '', info: '',
 };
 S.cal = { y: +S.today.slice(0, 4), m: +S.today.slice(5, 7) };
@@ -604,11 +623,13 @@ const isOffDay = (d) => S.policy.weeklyHolidayDow.includes(dayOfWeek(d)) || isHo
 const typeSums = (t) => ({ paid: t.components.reduce((s, c) => s + c.minutes, 0), deduct: t.components.reduce((s, c) => s + c.deduct_days, 0) });
 const typeLabel = (t) => { const x = typeSums(t); return `${t.name} (${x.paid / 60}h, ${x.deduct}일)`; };
 const statusKo = { approved: '승인', pending: '승인 대기', rejected: '반려', cancelled: '취소' };
+const stLabel = (r) => (r.cancel_requested ? '취소 요청 중' : statusKo[r.status]);
+const stClass = (r) => (r.cancel_requested ? 'wait' : badge(r.status));
 const badge = (s) => ({ approved: 'ok', pending: 'wait', rejected: 'no' }[s] || '');
 const approverTitle = (id) => { const o = S.orgs.find((x) => x.head_id === id); return o ? `${o.head_title} · ${o.name}` : (person(id) ? orgOf(person(id).org_id)?.name ?? '' : ''); };
 const ATT_ACTION = { create: '생성', edit: '수정', delete: '삭제' };
-const reqTitle = (r) => (r.kind === 'attendance' ? `출퇴근기록 ${ATT_ACTION[r.action]}` : (typeOf(r.type_id)?.name ?? '휴가'));
-const reqWhen = (r) => (r.kind === 'attendance' ? md(r.work_date) : r.dates.map(md).join(', '));
+const reqTitle = (r) => (r.kind === 'schedule' ? `근무일정 ${r.action === 'set' ? '등록·변경' : '삭제'}` : r.kind === 'attendance' ? `출퇴근기록 ${ATT_ACTION[r.action]}` : (typeOf(r.type_id)?.name ?? '휴가'));
+const reqWhen = (r) => (r.kind === 'schedule' ? (r.items.length > 3 ? `${md(r.items[0].date)} 외 ${r.items.length - 1}일` : r.items.map((i) => md(i.date)).join(', ')) : r.kind === 'attendance' ? md(r.work_date) : r.dates.map(md).join(', '));
 const geoOn = () => !!(S.settings.geofence && S.settings.geofence.enabled) && !S.exempt;
 
 /* ---------- 데이터 불러오기 ---------- */
@@ -632,11 +653,13 @@ async function loadStatic() {
 }
 async function loadRange(from, to) {
   const uid = session.user.id;
-  const [recs, lds] = await Promise.all([
+  const [recs, lds, shs] = await Promise.all([
     rest('attendance_records', `select=work_date,clock_in,clock_out,source,in_distance_m,out_distance_m&user_id=eq.${uid}&work_date=gte.${from}&work_date=lte.${to}`),
     rest('leave_days', `select=leave_date,minutes,deduct_days,type_id,request_id,leave_requests(status)&user_id=eq.${uid}&active=eq.true&leave_date=gte.${from}&leave_date=lte.${to}`),
+    rest('work_schedules', `select=work_date,start_time,end_time&user_id=eq.${uid}&work_date=gte.${from}&work_date=lte.${to}`),
   ]);
-  for (let d = from; d <= to; d = addDays(d, 1)) { delete S.recs[d]; delete S.lv[d]; }
+  for (let d = from; d <= to; d = addDays(d, 1)) { delete S.recs[d]; delete S.lv[d]; delete S.sched[d]; }
+  for (const x of shs) S.sched[x.work_date] = { start: x.start_time.slice(0, 5), end: x.end_time.slice(0, 5) };
   for (const r of recs) S.recs[r.work_date] = { date: r.work_date, clockIn: hmSeoul(r.clock_in), clockOut: hmSeoul(r.clock_out), source: r.source, inDist: r.in_distance_m, outDist: r.out_distance_m };
   for (const l of lds) (S.lv[l.leave_date] = S.lv[l.leave_date] || []).push({ minutes: l.minutes, deduct: l.deduct_days, typeId: l.type_id, reqId: l.request_id, status: l.leave_requests ? l.leave_requests.status : 'pending' });
   S.loaded.add(`${from}|${to}`);
@@ -650,12 +673,17 @@ async function loadHomeData() {
 }
 async function loadRequests() {
   const uid = session.user.id;
-  const [ml, ma, il, ia] = await Promise.all([
+  const emb = 'select=*,schedule_request_items(work_date,start_time,end_time)';
+  const [ml, ma, il, ia, ms, is] = await Promise.all([
     rest('leave_requests', `select=*&user_id=eq.${uid}&order=created_at.desc&limit=40`),
     rest('attendance_requests', `select=*&user_id=eq.${uid}&order=created_at.desc&limit=40`),
     rest('leave_requests', `select=*&approver_id=eq.${uid}&order=created_at.desc&limit=40`),
     rest('attendance_requests', `select=*&approver_id=eq.${uid}&order=created_at.desc&limit=40`),
+    rest('schedule_requests', `${emb}&user_id=eq.${uid}&order=created_at.desc&limit=40`),
+    rest('schedule_requests', `${emb}&approver_id=eq.${uid}&order=created_at.desc&limit=40`),
   ]);
+  const sch = (r) => ({ ...r, kind: 'schedule', items: (r.schedule_request_items || []).map((i) => ({ date: i.work_date, start: i.start_time ? i.start_time.slice(0, 5) : null, end: i.end_time ? i.end_time.slice(0, 5) : null })).sort((a, b) => a.date.localeCompare(b.date)) });
+  S.mySch = ms.map(sch); S.inboxSch = is.map(sch);
   S.myLeave = ml.map((r) => ({ ...r, kind: 'leave' })); S.myAtt = ma.map((r) => ({ ...r, kind: 'attendance' }));
   S.inboxLeave = il.map((r) => ({ ...r, kind: 'leave' })); S.inboxAtt = ia.map((r) => ({ ...r, kind: 'attendance' }));
   await loadSignups();
@@ -682,7 +710,7 @@ async function refreshAll() {
 const header = (o) => `<header class="hdr">${o.back ? `<button class="ib" data-a="back" aria-label="뒤로">${ico('back')}</button>` : `<button class="ib menu-btn" data-a="drawer" aria-label="메뉴">${ico('menu')}</button>`}
   ${o.logo ? '<div class="logo">근태·휴가</div><div class="ttl onlydesk">홈</div>' : `<div class="ttl">${esc(o.title)}</div>`}${o.right || ''}</header>`;
 const signupCount = () => (S.me && S.me.role === 'admin' ? S.signups.length : 0);
-const pendingCount = () => [...S.inboxLeave, ...S.inboxAtt].filter((r) => r.status === 'pending').length;
+const pendingCount = () => [...S.inboxLeave, ...S.inboxAtt, ...S.inboxSch].filter((r) => r.status === 'pending' || (r.status === 'approved' && r.cancel_requested)).length;
 const NAV = [['home', '홈', 'home'], ['requests', '요청', 'inbox'], ['schedule', '월 근무', 'cal'], ['records', '출퇴근기록', 'clock'], ['leave', '휴가', 'plane']];
 function tabbar() {
   const n = pendingCount();
@@ -691,9 +719,9 @@ function tabbar() {
 function sidebar() {
   const n = pendingCount();
   return `<aside class="side" aria-label="메뉴"><div class="brand">근태·휴가</div><nav>${NAV.map(([k, l, i]) => `<button class="navbtn ${S.tab === k && !S.stack.length ? 'on' : ''}" data-a="tab" data-k="${k}">${ico(i)}<span>${l}</span>${k === 'requests' ? `<span class="badge ${n ? '' : 'gray'}">${n}</span>` : ''}</button>`).join('')}</nav>
-    ${S.me.role === 'admin' ? `<nav><button class="navbtn" data-a="signups">${ico('inbox')}<span>가입 요청</span><span class="badge ${signupCount() ? '' : 'gray'}">${signupCount()}</span></button></nav>` : ''}
+    ${S.me.role === 'admin' ? `<nav><button class="navbtn" data-a="signups">${ico('inbox')}<span>가입 요청</span><span class="badge ${signupCount() ? '' : 'gray'}">${signupCount()}</span></button><button class="navbtn" data-a="go" data-k="admin">${ico('menu')}<span>관리자 메뉴</span></button></nav>` : ''}
     <div class="sidefoot"><div class="who"><b>${esc(S.me.name)}</b><div class="muted small">${esc(orgOf(S.me.org_id)?.name ?? '소속 없음')}${S.me.role === 'admin' ? ' · 관리자' : ''}</div></div>
-    <button class="navbtn small" data-a="logout">로그아웃</button></div></aside>`;
+    <button class="navbtn small" data-a="go" data-k="pw">비밀번호 변경</button><button class="navbtn small" data-a="logout">로그아웃</button></div></aside>`;
 }
 const monthNav = (c, key) => `<div class="calhd"><button class="ib" data-a="mnav" data-k="${key}" data-n="-1" aria-label="이전 달">${ico('back')}</button><b>${c.m}월 ${c.y}</b><button class="ib" data-a="mnav" data-k="${key}" data-n="1" aria-label="다음 달">${ico('chev')}</button></div>`;
 const dowRow = () => `<div class="grid">${DOW.map((d, i) => `<div class="dw ${i === 0 ? 'sun' : ''}">${d}</div>`).join('')}</div>`;
@@ -703,40 +731,62 @@ const recordDone = (r) => (r && r.clockIn && r.clockOut ? r : null);
 const spinner = '<div class="empty"><span class="spin"></span> 불러오는 중…</div>';
 
 /* ---------- 화면: 홈 ---------- */
+const minHM = (m) => `${p2(Math.floor(m / 60))}:${p2(m % 60)}`;
+function planDay(d) {
+  const sc = S.sched[d], lv = leaveMin(d), full = S.policy.leaveHoursPerDay * 60;
+  const work = sc ? Math.max(0, toMinutes(sc.end) - toMinutes(sc.start) - S.policy.breakMinutes) : 0;
+  return lv >= full ? lv : lv + Math.min(work, full - lv);
+}
+function clockHint() {
+  const rules = S.settings.clock_rules || {};
+  if (rules.require_schedule === false) return null;
+  const sc = S.sched[S.today];
+  if (!sc) return { code: 'no_schedule', text: '오늘 승인된 근무일정이 없어 출근할 수 없습니다. 근무일정을 요청해 승인받으세요.' };
+  const before = rules.before_start_minutes ?? 30, st = toMinutes(sc.start);
+  const open = minHM(st > before ? st - before : 0), now = hmSeoul(new Date().toISOString());
+  if (now < open) return { code: 'too_early', text: `${open}부터 출근할 수 있습니다. (일정 ${sc.start}-${sc.end})` };
+  if (now > sc.end) return { code: 'ended', text: `오늘 일정(${sc.start}-${sc.end})이 끝났습니다.` };
+  return { code: 'open', text: `일정 ${sc.start}-${sc.end} · ${open}부터 출근 가능` };
+}
 function homeScreen() {
-  const t = S.today, rec = S.recs[t], ws = weekStartOf(t), we = addDays(ws, 6);
+  const t = S.today, rec = S.recs[t], ws = weekStartOf(t), we = addDays(ws, 6), sch = S.sched[t];
   const st = !rec ? ['출근 전', ''] : rec.clockOut ? ['퇴근 완료', 'ok'] : ['근무 중', 'live'];
-  let act = 0;
+  let act = 0, plan = 0;
   const tiles = [];
   for (let i = 0; i < 7; i++) {
-    const d = addDays(ws, i), r = S.recs[d], lv = (S.lv[d] || [])[0];
+    const d = addDays(ws, i), r = S.recs[d], lv = (S.lv[d] || [])[0], sc = S.sched[d];
     if (d <= t) act += dailyWorkMinutes(recordDone(r), S.policy) + leaveMin(d);
+    plan += planDay(d);
     let inner;
     if (r) inner = `<div>${r.clockIn}</div><div class="muted">${r.clockOut || '근무 중'}</div>`;
     else if (lv) inner = `<div class="lv">${esc(typeOf(lv.typeId)?.name.split(' ')[0] ?? '휴가')}</div>`;
+    else if (sc) inner = `<div class="muted">${sc.start}</div><div class="muted">${sc.end}</div>`;
     else if (isOffDay(d)) inner = '<div class="muted">휴일</div>';
-    else inner = '<div class="muted">-</div>';
+    else inner = '<div class="muted">일정<br>없음</div>';
     tiles.push(`<div class="tile ${d === t ? 'today' : ''}"><div class="d ${i === 0 ? 'sun' : ''}">${d === t ? '오늘' : DOW[i]}</div>${inner}</div>`);
   }
   const pct = (m) => Math.min(100, (m / (52 * 60)) * 100);
   const g = S.settings.geofence || {};
-  const geoNote = geoOn() ? `<div class="muted small" style="margin:-4px 0 10px">위치 확인: 근무지 반경 ${g.radius_m ?? 200}m 이내에서만 ${[g.apply_in !== false ? '출근' : '', g.apply_out !== false ? '퇴근' : ''].filter(Boolean).join('·')}할 수 있습니다.</div>` : '';
+  const geoNote = geoOn() ? `<div class="muted small" style="margin:0 0 10px">위치 확인: 근무지 반경 ${g.radius_m ?? 200}m 이내에서만 ${[g.apply_in !== false ? '출근' : '', g.apply_out !== false ? '퇴근' : ''].filter(Boolean).join('·')}할 수 있습니다.</div>` : '';
   const dist = (n) => (n != null ? ` <span class="muted small">(${n}m)</span>` : '');
-  const btn = S.busy ? '<button class="btn primary" disabled><span class="spin"></span> 처리 중…</button>' : !rec ? '<button class="btn primary" data-a="clock">출근하기</button>' : !rec.clockOut ? '<button class="btn primary" data-a="clock">퇴근하기</button>' : '<button class="btn primary" disabled>퇴근 완료</button>';
+  const hint = clockHint(), noSch = !rec && hint && hint.code === 'no_schedule';
+  const btn = S.busy ? '<button class="btn primary" disabled><span class="spin"></span> 처리 중…</button>' : !rec ? (noSch ? '<button class="btn primary" disabled>출근 불가</button>' : '<button class="btn primary" data-a="clock">출근하기</button>') : !rec.clockOut ? '<button class="btn primary" data-a="clock">퇴근하기</button>' : '<button class="btn primary" disabled>퇴근 완료</button>';
   return { header: header({ logo: true }), cls: 'grid2', body: `
     <div class="card"><h2>오늘 근무</h2>
-      <div class="today-line"><div>${+t.slice(5, 7)}/${+t.slice(8, 10)} (${DOW[dayOfWeek(t)]})</div><div>${esc(orgOf(S.me.org_id)?.name ?? '')} <span class="chip ${st[1]}">${st[0]}</span></div></div>
-      <div class="btns"><button class="btn" data-a="sheet" data-k="request">요청</button>${btn}</div>${geoNote}
+      <div class="today-line"><div>${+t.slice(5, 7)}/${+t.slice(8, 10)} (${DOW[dayOfWeek(t)]})</div><div>${sch ? `${sch.start} - ${sch.end}` : '근무일정 없음'} | ${esc(orgOf(S.me.org_id)?.name ?? '')} <span class="chip ${st[1]}">${st[0]}</span></div></div>
+      <div class="btns"><button class="btn" data-a="sheet" data-k="request">요청</button>${btn}</div>
+      ${!rec && hint ? `<div class="small" style="margin:0 0 10px;color:${hint.code === 'open' ? 'var(--muted)' : 'var(--red)'}" role="status">${esc(hint.text)}</div>` : ''}
+      ${noSch ? '<div class="btns" style="margin-top:0"><button class="btn block" data-a="schedNew">근무일정 요청하기</button></div>' : ''}${geoNote}
       <hr style="border:0;border-top:1px solid var(--line)">
       <div class="kv"><b>출근</b><span>${rec ? rec.clockIn : '-'}${dist(rec && rec.inDist)}</span></div>
       <div class="kv"><b>퇴근</b><span>${rec && rec.clockOut ? rec.clockOut : '-'}${dist(rec && rec.outDist)}</span></div>
       <div class="kv"><b>총 근로시간</b><span class="green">${recordDone(rec) ? hours(dailyWorkMinutes(rec, S.policy)) : '-'}</span></div></div>
     <div class="card"><h3>이번주 근무</h3><div class="muted small">${md(ws)} - ${md(we)}</div>
       <div class="week">${tiles.join('')}</div>
-      <div class="bar" role="img" aria-label="이번주 ${hours(act)}"><div class="act" style="width:${pct(act)}%"></div>
-        <div class="tick" style="left:${pct(40 * 60)}%"></div><div class="tick lim" style="left:100%"></div>
+      <div class="bar" role="img" aria-label="이번주 실제 ${hours(act)} / 계획 ${hours(plan)}"><div class="plan" style="width:${pct(plan)}%"></div><div class="act" style="width:${pct(act)}%"></div>
+        <div class="pl" style="left:${pct(plan)}%">계획 ▾</div><div class="tick" style="left:${pct(40 * 60)}%"></div><div class="tick lim" style="left:100%"></div>
         <div class="lbl" style="left:${pct(40 * 60)}%">40</div><div class="lbl" style="left:98%">52</div></div>
-      <div class="sumline" style="margin-top:30px">${hours(act)} <span>(휴가 포함)</span></div></div>` };
+      <div class="sumline" style="margin-top:30px">${hours(act)} <span>/ 계획 ${hours(plan)} (휴가 포함)</span></div></div>` };
 }
 
 /* ---------- 화면: 월 근무 / 출퇴근기록 / 휴가 / 요청 ---------- */
@@ -745,19 +795,22 @@ function scheduleScreen() {
   const evs = (d) => {
     const out = [], lv = S.lv[d] || [], r = S.recs[d], seen = new Set();
     for (const l of lv) { if (seen.has(l.reqId)) continue; seen.add(l.reqId); out.push(`<span class="ev" style="background:${l.status === 'pending' ? '#8a8f99' : '#168a3a'}">✈ ${esc((typeOf(l.typeId)?.name || '휴가').split(' ')[0])}</span>`); }
-    if (r) out.push(`<span class="ev" style="background:${palette[hash(r.clockIn || '') % palette.length]}"><span class="evfull">${r.clockIn}-${r.clockOut || '…'}</span><span class="evshort">${+r.clockIn.slice(0, 2)}:${r.clockIn.slice(3)}</span></span>`);
+    const sc = S.sched[d];
+    if (sc) out.push(`<span class="ev" style="background:${r ? '#168a8a' : palette[hash(sc.start + sc.end) % palette.length]}"><span class="evfull">${sc.start}-${sc.end}</span><span class="evshort">${+sc.start.slice(0, 2)}:${sc.start.slice(3)}</span></span>`);
+    else if (r) out.push(`<span class="ev" style="background:${palette[hash(r.clockIn || '') % palette.length]}"><span class="evfull">${r.clockIn}-${r.clockOut || '…'}</span><span class="evshort">${+r.clockIn.slice(0, 2)}:${r.clockIn.slice(3)}</span></span>`);
     return out.join('');
   };
   const cells = dates.map((d) => `<div class="mcell"><span class="n ${d === S.today ? 'today' : ''} ${+d.slice(5, 7) !== c.m ? 'oth' : ''} ${dayOfWeek(d) === 0 || isHoliday(d) ? 'sun' : ''}">${+d.slice(8, 10)}</span>${evs(d)}</div>`).join('');
   const list = dates.map((d) => {
-    const r = S.recs[d], lv = S.lv[d] || [];
-    if (!r && !lv.length) return '';
+    const r = S.recs[d], lv = S.lv[d] || [], sc = S.sched[d];
+    if (!r && !lv.length && !sc) return '';
     const seen = new Set();
     return `<div class="dh ${dayOfWeek(d) === 0 ? 'sun' : ''}">${+d.slice(5, 7)}월 ${+d.slice(8, 10)}일, ${DOW[dayOfWeek(d)]}${isHoliday(d) ? ` · ${esc(S.holidays[d])}` : ''}</div>` +
       lv.filter((l) => !seen.has(l.reqId) && seen.add(l.reqId)).map((l) => `<div class="it"><div class="ico">${ico('plane')}</div><div><b>${esc(typeOf(l.typeId)?.name ?? '휴가')}</b><div class="muted small">${statusKo[l.status] ?? ''}</div></div></div>`).join('') +
+      (sc ? `<div class="it"><div class="ico">${ico('cal')}</div><div><b>${sc.start} - ${sc.end}</b><div class="muted small">근무일정${r ? ' (출근함)' : ''}</div></div></div>` : '') +
       (r ? `<div class="it"><div class="ico">${ico('clock')}</div><div><b>${r.clockIn} - ${r.clockOut || '근무 중'}</b><div class="muted small">${recordDone(r) ? `실근로 ${hours(dailyWorkMinutes(r, S.policy))}` : '퇴근 전'}</div></div></div>` : '');
   }).join('');
-  return { header: header({ title: '월 근무' }), cls: '', body: `<div class="bleed"><div class="split"><div class="split-a">${monthNav(c, 'cal')}<div style="background:var(--card)">${dowRow()}<div class="grid">${cells}</div></div></div><div class="daylist split-b">${list || '<div class="empty">이 달의 기록이 없습니다.</div>'}</div></div></div>` };
+  return { header: header({ title: '월 근무', right: `<button class="btn" style="border:0;color:var(--primary);height:44px" data-a="schedNew">일정 요청</button>` }), cls: '', body: `<div class="bleed"><div class="split"><div class="split-a">${monthNav(c, 'cal')}<div style="background:var(--card)">${dowRow()}<div class="grid">${cells}</div></div></div><div class="daylist split-b">${list || '<div class="empty">이 달의 기록이 없습니다.</div>'}</div></div></div>` };
 }
 function monthSummary(y, m) {
   const records = [], leaves = [];
@@ -801,32 +854,37 @@ function leaveScreen() {
     <div class="muted small">부여 ${granted}일 · 사용(승인 대기 포함) ${Math.round((granted - Number(b.remaining)) * 100) / 100}일</div>
     ${b.period_end ? '' : '<div class="muted small" style="margin-top:8px;color:var(--red)">발생한 연차가 없습니다. 관리자에게 문의해 주세요.</div>'}
     <div class="btns"><button class="btn primary" data-a="leaveNew">휴가 신청</button></div></div>
-    <div class="card flush"><div style="padding:14px 16px;font-weight:700">내 휴가 내역</div>${mine.map((r) => `<button class="rowbtn" style="font-weight:500;border-top:1px solid var(--line)" data-a="req" data-k="leave" data-id="${r.id}"><div><div>${esc(reqTitle(r))}</div><div class="muted small">${reqWhen(r)}</div></div><span class="chip ${badge(r.status)}" style="margin-left:auto">${statusKo[r.status]}</span></button>`).join('') || '<div class="empty">내역이 없습니다.</div>'}</div>` };
+    <div class="card flush"><div style="padding:14px 16px;font-weight:700">내 휴가 내역</div>${mine.map((r) => `<button class="rowbtn" style="font-weight:500;border-top:1px solid var(--line)" data-a="req" data-k="leave" data-id="${r.id}"><div><div>${esc(reqTitle(r))}</div><div class="muted small">${reqWhen(r)}</div></div><span class="chip ${stClass(r)}" style="margin-left:auto">${stLabel(r)}</span></button>`).join('') || '<div class="empty">내역이 없습니다.</div>'}</div>` };
 }
 function requestsScreen() {
-  const all = (a, b) => [...a, ...b].sort((x, y) => y.created_at.localeCompare(x.created_at));
-  const list = S.seg === 'inbox' ? all(S.inboxLeave, S.inboxAtt).sort((a, b) => (b.status === 'pending') - (a.status === 'pending')) : all(S.myLeave, S.myAtt);
+  const all = (a, b, c) => [...a, ...b, ...c].sort((x, y) => y.created_at.localeCompare(x.created_at));
+  const list = S.seg === 'inbox' ? all(S.inboxLeave, S.inboxAtt, S.inboxSch).sort((a, b) => (b.status === 'pending') - (a.status === 'pending')) : all(S.myLeave, S.myAtt, S.mySch);
   const n = pendingCount();
   const banner = signupCount() ? `<button class="card rowbtn" style="margin-bottom:12px;color:var(--primary)" data-a="signups"><span>가입 요청 ${signupCount()}건이 승인을 기다립니다</span><span class="chev">${ico('chev')}</span></button>` : '';
   return { header: header({ title: '요청' }), cls: 'narrow', body: `${banner}<div class="seg"><button class="${S.seg === 'mine' ? 'on' : ''}" data-a="seg" data-k="mine">내 요청</button><button class="${S.seg === 'inbox' ? 'on' : ''}" data-a="seg" data-k="inbox">승인 대기 ${n}</button></div>
-    <div class="card flush">${list.map((r) => `<button class="rowbtn" style="font-weight:500;border-top:1px solid var(--line)" data-a="req" data-k="${r.kind}" data-id="${r.id}"><div><div>${S.seg === 'inbox' ? `<b>${esc(person(r.user_id)?.name ?? '')}</b> · ` : ''}${esc(reqTitle(r))}</div><div class="muted small">${reqWhen(r)} · 승인권자 ${esc(person(r.approver_id)?.name ?? '')}</div></div><span class="chip ${badge(r.status)}" style="margin-left:auto">${statusKo[r.status]}</span></button>`).join('') || '<div class="empty">요청이 없습니다.</div>'}</div>` };
+    <div class="card flush">${list.map((r) => `<button class="rowbtn" style="font-weight:500;border-top:1px solid var(--line)" data-a="req" data-k="${r.kind}" data-id="${r.id}"><div><div>${S.seg === 'inbox' ? `<b>${esc(person(r.user_id)?.name ?? '')}</b> · ` : ''}${esc(reqTitle(r))}</div><div class="muted small">${reqWhen(r)} · 승인권자 ${esc(person(r.approver_id)?.name ?? '')}</div></div><span class="chip ${stClass(r)}" style="margin-left:auto">${stLabel(r)}</span></button>`).join('') || '<div class="empty">요청이 없습니다.</div>'}</div>` };
 }
 function requestDetail(p) {
-  const r = [...S.myLeave, ...S.myAtt, ...S.inboxLeave, ...S.inboxAtt].find((x) => x.id === p.id && x.kind === p.kind);
+  const r = [...S.myLeave, ...S.myAtt, ...S.mySch, ...S.inboxLeave, ...S.inboxAtt, ...S.inboxSch].find((x) => x.id === p.id && x.kind === p.kind);
   if (!r) return { header: header({ back: true, title: '요청 상세' }), cls: 'narrow', body: '<div class="empty">요청을 찾을 수 없습니다.</div>' };
   const mineReq = r.user_id === S.me.id, canDecide = r.status === 'pending' && r.approver_id === S.me.id && !mineReq;
   const rec = (a, b) => (a ? `${hmSeoul(a)} - ${hmSeoul(b) ?? '근무 중'}` : '기록 없음');
-  const rows = r.kind === 'attendance'
+  const rows = r.kind === 'schedule'
+    ? `<div class="kv"><b>구분</b><span>${r.action === 'set' ? '등록·변경' : '삭제'} (${r.items.length}일)</span></div>${r.items.map((i) => `<div class="kv"><b>${md(i.date)} (${DOW[dayOfWeek(i.date)]})</b><span>${i.start ? `${i.start} - ${i.end}` : '삭제'}</span></div>`).join('')}`
+    : r.kind === 'attendance'
     ? `<div class="kv"><b>날짜</b><span>${md(r.work_date)} (${DOW[dayOfWeek(r.work_date)]})</span></div>
        <div class="kv"><b>변경 전</b><span>${r.before ? rec(r.before.clock_in, r.before.clock_out) : '기록 없음'}</span></div>
        <div class="kv"><b>변경 후</b><span>${r.action === 'delete' ? '기록 삭제' : rec(r.clock_in, r.clock_out)}</span></div>`
     : `<div class="kv"><b>날짜</b><span style="text-align:right">${r.dates.map((d) => `${md(d)} (${DOW[dayOfWeek(d)]})`).join('<br>')}</span></div>`;
   return { header: header({ back: true, title: '요청 상세' }), cls: 'narrow', body: `<div class="card"><span class="chip ${badge(r.status)}">${statusKo[r.status]}</span>
-    <h2 style="margin-top:10px">${esc(reqTitle(r))}</h2>
+    ${r.cancel_requested ? ' <span class="chip wait">취소 요청 중</span>' : ''}<h2 style="margin-top:10px">${esc(reqTitle(r))}</h2>
     <div class="kv"><b>신청자</b><span>${esc(person(r.user_id)?.name ?? '')}</span></div>${rows}
     <div class="kv"><b>승인권자</b><span>${esc(person(r.approver_id)?.name ?? '')}</span></div>
     <div class="kv"><b>사유</b><span style="text-align:right;max-width:60%">${esc(r.reason)}</span></div>
     ${r.comment ? `<div class="kv"><b>의견</b><span>${esc(r.comment)}</span></div>` : ''}
+    ${r.cancel_requested ? `<div class="kv"><b>취소 요청</b><span style="text-align:right;max-width:60%">${esc(r.cancel_reason || '')}</span></div>` : ''}
+    ${r.kind === 'leave' && r.cancel_requested && r.status === 'approved' && r.approver_id === S.me.id && !mineReq ? `<div class="btns"><button class="btn danger" data-a="decideCancel" data-id="${r.id}" data-v="rejected">취소 거절</button><button class="btn primary" data-a="decideCancel" data-id="${r.id}" data-v="approved">취소 승인</button></div>` : ''}
+    ${r.kind === 'leave' && mineReq && r.status === 'approved' && !r.cancel_requested && r.dates[0] > S.today ? `<div class="field"><label for="lc-reason">휴가 취소 요청 사유</label><input id="lc-reason" type="text" maxlength="200"></div><div class="btns"><button class="btn danger block" data-a="reqCancelLeave" data-id="${r.id}">휴가 취소 요청</button></div>` : ''}
     ${canDecide ? `<div class="btns"><button class="btn danger" data-a="decide" data-k="${r.kind}" data-id="${r.id}" data-v="rejected">반려</button><button class="btn primary" data-a="decide" data-k="${r.kind}" data-id="${r.id}" data-v="approved">승인</button></div>` : ''}
     ${mineReq && r.status === 'pending' ? `<div class="btns"><button class="btn danger block" data-a="cancel" data-k="${r.kind}" data-id="${r.id}">요청 취소</button></div>` : ''}</div>` };
 }
@@ -908,8 +966,32 @@ function signupsScreen() {
     <div class="btns"><button class="btn danger" data-a="rejectSignup" data-id="${r.id}">반려</button><button class="btn primary" data-a="approveSignup" data-id="${r.id}">승인</button></div></div>`).join('');
   return { header: header({ back: true, title: '가입 요청' }), cls: 'narrow', body: cards || '<div class="empty">처리할 가입 요청이 없습니다.</div>' };
 }
+function schedForm() {
+  const d = S.sdraft, del = d.action === 'delete', keys = Object.keys(d.items).sort();
+  const cells = gridDates(d.cal).map((date) => {
+    const other = +date.slice(5, 7) !== d.cal.m, past = date < S.today, far = date > addDays(S.today, 120), ex = (d.target ? S.schedT : S.sched)[date];
+    const dis = other || past || far || (del && !ex);
+    const sel = d.picked.includes(date), inList = d.items[date] !== undefined;
+    const cls = ['cell', other ? 'other' : '', date === S.today ? 'today' : '', sel ? 'sel' : '', (dayOfWeek(date) === 0 || isHoliday(date)) ? 'off' : '', past && !other ? 'past' : ''].join(' ');
+    return `<button class="${cls}" ${dis ? 'disabled' : ''} data-a="schedPick" data-d="${date}" aria-label="${date}">${+date.slice(8, 10)}${ex ? '<i class="dot"></i>' : ''}${inList ? '<span class="mk">추가</span>' : ''}</button>`;
+  }).join('');
+  const ap = d.approverId ? person(d.approverId) : null, okTimes = d.start && d.end && toMinutes(d.end) > toMinutes(d.start);
+  const ready = keys.length && (d.target || (d.reason.trim() && d.approverId));
+  return { header: header({ back: true, title: d.target ? `일정 대리 등록 · ${person(d.target)?.name ?? ''}` : '근무일정 요청', right: `<button id="sendBtnS" class="btn" style="border:0;color:var(--primary);height:44px" data-a="sendSched" ${ready && !S.busy ? '' : 'disabled'}>보내기</button>` }), cls: 'narrow', body: `<div class="bleed">
+    <div class="seg" style="margin:12px"><button class="${!del ? 'on' : ''}" data-a="schedAction" data-k="set">등록·변경</button><button class="${del ? 'on' : ''}" data-a="schedAction" data-k="delete">삭제</button></div>
+    <div style="background:var(--card)">${monthNav(d.cal, 'sdraft')}${dowRow()}<div class="grid">${cells}</div></div>
+    <div class="foot muted small">${del ? '삭제할 날짜를 고르세요. ● 표시는 승인된 일정이 있는 날이에요.' : '날짜를 여러 개 고른 뒤 시간을 정하고 “적용”을 누르세요. ● 표시는 이미 승인된 일정이 있는 날이에요.'}</div>
+    <div class="btns" style="margin:0 12px"><button class="btn" data-a="schedAll" ${del ? 'disabled' : ''}>이 달 남은 평일 선택</button><button class="btn" data-a="schedClear">선택 해제</button></div>
+    ${del ? '' : `<div class="field"><div class="pair"><label class="small muted">시작<input type="time" value="${d.start}" data-c="sd" data-f="start"></label><label class="small muted">종료<input type="time" value="${d.end}" data-c="sd" data-f="end"></label></div>
+      ${okTimes ? '' : '<div class="small" style="color:var(--red);margin-top:8px" role="alert">종료 시각이 시작 시각보다 늦어야 합니다. (자정을 넘기는 근무는 아직 지원하지 않습니다)</div>'}</div>`}
+    <div class="btns" style="margin:0 12px"><button class="btn primary block" data-a="schedApply" ${d.picked.length && (del || okTimes) ? '' : 'disabled'}>선택한 ${d.picked.length}일 ${del ? '삭제 목록에 추가' : '적용'}</button></div>
+    ${keys.length ? `<div class="field"><label>요청 목록 (${keys.length}일)</label>${keys.map((k) => `<div class="kv" style="padding:6px 0"><span>${md(k)} (${DOW[dayOfWeek(k)]})</span><span>${d.items[k].start ? `${d.items[k].start} - ${d.items[k].end}` : '삭제'} <button class="btn" style="height:30px;padding:0 10px" data-a="schedRemove" data-d="${k}">빼기</button></span></div>`).join('')}</div>` : ''}
+    ${d.target ? '<div class="foot muted small">관리자가 대신 등록하면 승인 없이 바로 반영됩니다.</div>' : `<div class="field"><label for="sreason">사유 (필수)</label><textarea id="sreason" data-i="sreason" placeholder="예: 11월 근무일정 등록">${esc(d.reason)}</textarea></div>
+    <button class="pick ${ap ? '' : 'need'}" style="margin-top:10px" data-a="sheet" data-k="approverS"><b>승인권자 <span class="chip live">${ap ? 1 : 0} / 1</span></b><span class="v">${ap ? esc(ap.name) : '선택해 주세요'} ›</span></button>
+    ${ap ? `<div class="muted small" style="padding:6px 16px">${esc(approverTitle(ap.id))}</div>` : ''}`}</div>` };
+}
 const TABS = { home: homeScreen, schedule: scheduleScreen, records: recordsScreen, leave: leaveScreen, requests: requestsScreen };
-const PAGES = { signups: signupsScreen, leave1: leaveStep1, leave2: leaveStep2, att: attForm, req: requestDetail };
+const PAGES = { sched: schedForm, signups: signupsScreen, leave1: leaveStep1, leave2: leaveStep2, att: attForm, req: requestDetail };
 
 /* ---------- 시트 ---------- */
 function geoMessage(res) {
@@ -927,16 +1009,22 @@ function renderSheet() {
   if (!sh) return '';
   const wrap = (inner) => `<div class="sheetbg" data-a="closeSheet"><div class="sheet" role="dialog" aria-modal="true" data-stop="1">${inner}</div></div>`;
   if (sh.k === 'request') {
-    const items = [['출퇴근기록 생성', 'attNew', 'create'], ['출퇴근기록 수정', 'attNew', 'edit'], ['출퇴근기록 삭제', 'attNew', 'delete'], ['휴가 생성', 'leaveNew', '']];
+    const items = [['근무일정 요청', 'schedNew', ''], ['출퇴근기록 생성', 'attNew', 'create'], ['출퇴근기록 수정', 'attNew', 'edit'], ['출퇴근기록 삭제', 'attNew', 'delete'], ['휴가 생성', 'leaveNew', '']];
     return wrap(`<div class="sh">요청 종류를 선택하세요.</div>${items.map(([l, a, k]) => `<button class="si" data-a="${a}" data-k="${k}">${l}</button>`).join('')}<button class="si" data-a="closeSheet">취소</button>`);
   }
   if (sh.k === 'type') {
     const d = S.draft;
     return wrap(S.groups.map((g, gi) => { const ts = S.types.filter((t) => t.group_id === g.id); return ts.length ? `<div class="grp">${gi + 1}. ${esc(g.name)}</div>${ts.map((t) => `<button class="si ${t.id === d.typeId ? 'on' : ''}" data-a="setType" data-id="${t.id}"><span>${esc(typeLabel(t))}</span><span>${t.id === d.typeId ? '✓' : ''}</span></button>`).join('')}` : ''; }).join(''));
   }
-  if (sh.k === 'approver' || sh.k === 'approverA') {
-    const a = sh.k === 'approver' ? S.draft : S.adraft, list = a.approvers;
+  if (sh.k === 'approver' || sh.k === 'approverA' || sh.k === 'approverS') {
+    const a = sh.k === 'approver' ? S.draft : sh.k === 'approverA' ? S.adraft : S.sdraft, list = a.approvers;
     return wrap(`<div class="sh">승인권자를 선택하세요.</div>${!list ? spinner : list.map((c) => `<button class="si ${a.approverId === c.approver_id ? 'on' : ''}" data-a="setApprover" data-w="${sh.k}" data-id="${c.approver_id}"><span>${esc(c.name)}<div class="muted small">${esc(c.head_title ? `${c.head_title} · ${c.org_name}` : '')}</div></span><span>${a.approverId === c.approver_id ? '✓' : ''}</span></button>`).join('') || '<div class="empty">후보가 없습니다. 관리자에게 문의해 주세요.</div>'}`);
+  }
+  if (sh.k === 'schedFail') {
+    const r = sh.res || {}, sc = r.start ? `(일정 ${r.start}-${r.end})` : '';
+    const msg = r.code === 'no_schedule' ? '오늘 승인된 근무일정이 없습니다. 근무일정을 요청하고 승인받은 뒤 출근할 수 있어요.' : r.code === 'too_early' ? `${r.opens_at}부터 출근할 수 있어요. ${sc}` : `오늘 일정이 끝나 출근할 수 없습니다. ${sc} 출근 기록이 필요하면 정정 요청을 이용하세요.`;
+    return wrap(`<div class="sh" style="color:var(--red);font-weight:700">출근할 수 없습니다</div><div style="padding:0 20px 12px">${esc(msg)}</div>
+      <button class="si" data-a="schedNew">근무일정 요청</button><button class="si" data-a="attFromGeo" data-k="in">출퇴근 누락·수정 요청 보내기</button><button class="si" data-a="closeSheet">닫기</button>`);
   }
   if (sh.k === 'geoFail') {
     return wrap(`<div class="sh" style="color:var(--red);font-weight:700">${sh.action === 'in' ? '출근' : '퇴근'}할 수 없습니다</div><div style="padding:0 20px 12px">${esc(geoMessage(sh.res))}</div>
@@ -945,7 +1033,8 @@ function renderSheet() {
   if (sh.k === 'drawer') {
     return `<div class="sheetbg" style="justify-content:flex-start;align-items:stretch" data-a="closeSheet"><div class="drawer" role="dialog" aria-modal="true" data-stop="1">
       <div style="padding:0 20px 14px"><b style="font-size:18px">${esc(S.me.name)}</b><div class="muted small">${esc(orgOf(S.me.org_id)?.name ?? '소속 없음')}${S.me.role === 'admin' ? ' · 관리자' : ''}</div></div>
-      ${S.me.role === 'admin' ? `<button class="si" data-a="signups">가입 요청 (${signupCount()})</button>` : ''}
+      ${S.me.role === 'admin' ? `<button class="si" data-a="go" data-k="admin">관리자 메뉴</button><button class="si" data-a="signups">가입 요청 (${signupCount()})</button>` : ''}
+      <button class="si" data-a="go" data-k="pw">비밀번호 변경</button>
       <button class="si" data-a="reload">새로고침</button><button class="si" data-a="logout">로그아웃</button><button class="si" data-a="closeSheet">닫기</button></div></div>`;
   }
   return '';
@@ -1029,7 +1118,7 @@ async function loadSignupStatus() {
 async function doLogout(expired) {
   try { if (session && !expired) await fetch(CFG.url + '/auth/v1/logout', { method: 'POST', headers: { apikey: CFG.key, Authorization: `Bearer ${session.access_token}` } }); } catch (e) { /* 무시 */ }
   session = null; store.set(null);
-  Object.assign(S, { me: null, view: 'login', stack: [], sheet: null, tab: 'home', recs: {}, lv: {}, bal: null, myLeave: [], myAtt: [], inboxLeave: [], inboxAtt: [], loaded: new Set(), draft: null, adraft: null, signupReq: null, signups: [], info: '', authMode: 'login', authError: expired ? '로그인 시간이 지났습니다. 다시 로그인해 주세요.' : '' });
+  Object.assign(S, { me: null, view: 'login', stack: [], sheet: null, tab: 'home', recs: {}, lv: {}, bal: null, myLeave: [], myAtt: [], inboxLeave: [], inboxAtt: [], loaded: new Set(), draft: null, adraft: null, signupReq: null, signups: [], sched: {}, mySch: [], inboxSch: [], sdraft: null, info: '', authMode: 'login', authError: expired ? '로그인 시간이 지났습니다. 다시 로그인해 주세요.' : '' });
   render();
 }
 
@@ -1099,8 +1188,8 @@ const A = {
   drawer: () => { S.sheet = { k: 'drawer' }; render(); },
   sheet: (e) => guard(async () => {
     S.sheet = { k: e.k }; render();
-    if (e.k === 'approver' || e.k === 'approverA') {
-      const d = e.k === 'approver' ? S.draft : S.adraft;
+    if (e.k === 'approver' || e.k === 'approverA' || e.k === 'approverS') {
+      const d = e.k === 'approver' ? S.draft : e.k === 'approverA' ? S.adraft : S.sdraft;
       if (!d.approvers) { d.approvers = await rpc('my_approver_candidates', e.k === 'approver' ? { p_leave_type: d.typeId } : {}); render(); }
     }
   }),
@@ -1108,6 +1197,7 @@ const A = {
   seg: (e) => { S.seg = e.k; render(); },
   mnav: (e) => guard(async () => {
     const key = e.k, n = +e.n;
+    if (key === 'sdraft') { S.sdraft.cal = shiftMonth(S.sdraft.cal, n); const [a, b] = gridRange(S.sdraft.cal); render(); if (S.sdraft.target) await loadTargetSched(S.sdraft.target, a, b); else await ensureRange(a, b); render(); return; }
     if (key === 'draft') { S.draft.cal = shiftMonth(S.draft.cal, n); render(); return; }
     S[key] = shiftMonth(S[key], n);
     const [a, b] = gridRange(S[key]); render(); await ensureRange(a, b); render();
@@ -1126,6 +1216,7 @@ const A = {
     }
     const res = await rpc(action === 'in' ? 'clock_in' : 'clock_out', { p_lat: pos.lat, p_lng: pos.lng, p_accuracy: pos.accuracy });
     S.busy = false; S.toast = '';
+    if (!res.ok && res.schedule) { S.sheet = { k: 'schedFail', res: res.schedule }; render(); return; }
     if (!res.ok) { S.sheet = { k: 'geoFail', action, res: res.geo }; render(); return; }
     await loadRange(S.today, S.today); S.loaded = new Set(); render();
     toast(action === 'in' ? '출근했습니다.' : '퇴근했습니다.');
@@ -1145,7 +1236,7 @@ const A = {
     d.dates.sort(); render();
   },
   step2: () => push('leave2'),
-  setApprover: (e) => { const d = e.w === 'approver' ? S.draft : S.adraft; d.approverId = e.id; closeSheet(); },
+  setApprover: (e) => { const d = e.w === 'approver' ? S.draft : e.w === 'approverA' ? S.adraft : S.sdraft; d.approverId = e.id; closeSheet(); },
   send: () => guard(async () => {
     const d = S.draft; if (S.busy || !d.reason.trim() || !d.approverId) return;
     S.busy = true; render();
@@ -1176,13 +1267,53 @@ const A = {
     const to = person(d.approverId)?.name ?? ''; S.busy = false; S.adraft = null; S.stack = []; S.tab = 'requests'; S.seg = 'mine';
     await refreshAll(); render(); toast(`요청을 보냈습니다. 승인권자: ${to}`);
   }),
+  schedNew: () => guard(async () => {
+    S.sheet = null; const cal = { y: +S.today.slice(0, 4), m: +S.today.slice(5, 7) }, [a, b] = gridRange(cal); await ensureRange(a, b);
+    S.sdraft = { action: 'set', cal, picked: [], items: {}, start: '09:00', end: '18:00', reason: '', approverId: null, approvers: null };
+    S.stack = [{ name: 'sched' }]; render();
+  }),
+  schedAction: (e) => { const d = S.sdraft; d.action = e.k; d.picked = []; d.items = {}; render(); },
+  schedPick: (e) => { const d = S.sdraft, i = d.picked.indexOf(e.d); if (i >= 0) d.picked.splice(i, 1); else d.picked.push(e.d); d.picked.sort(); render(); },
+  schedAll: () => { const d = S.sdraft; for (let x = 1; x <= daysInMonth(d.cal.y, d.cal.m); x++) { const date = `${d.cal.y}-${p2(d.cal.m)}-${p2(x)}`; if (date >= S.today && isWorkday(date) && !d.picked.includes(date)) d.picked.push(date); } d.picked.sort(); render(); },
+  schedClear: () => { S.sdraft.picked = []; render(); },
+  schedApply: () => {
+    const d = S.sdraft;
+    if (d.action === 'set' && !(d.start && d.end && toMinutes(d.end) > toMinutes(d.start))) return toast('종료 시각이 시작 시각보다 늦어야 합니다.');
+    for (const date of d.picked) d.items[date] = d.action === 'set' ? { start: d.start, end: d.end } : {};
+    d.picked = []; render();
+  },
+  schedRemove: (e) => { delete S.sdraft.items[e.d]; render(); },
+  sendSched: () => guard(async () => {
+    const d = S.sdraft, keys = Object.keys(d.items).sort();
+    const items = keys.map((k) => (d.action === 'set' ? { date: k, start: d.items[k].start, end: d.items[k].end } : { date: k }));
+    if (d.target) {
+      if (S.busy || !keys.length) return;
+      S.busy = true; render(); const n = await rpc('admin_set_schedules', { p_user: d.target, p_action: d.action, p_items: items });
+      S.busy = false; S.sdraft = null; S.stack.pop(); await refreshAll(); render(); toast(`${n}일의 근무일정을 ${d.action === 'set' ? '등록' : '삭제'}했습니다.`); return;
+    }
+    if (S.busy || !keys.length || !d.reason.trim() || !d.approverId) return;
+    S.busy = true; render();
+    await rpc('submit_schedule_request', { p_action: d.action, p_items: items, p_reason: d.reason.trim(), p_approver: d.approverId });
+    const to = person(d.approverId)?.name ?? ''; S.busy = false; S.sdraft = null; S.stack = []; S.tab = 'requests'; S.seg = 'mine';
+    await refreshAll(); render(); toast(`일정 요청을 보냈습니다. 승인권자: ${to}`);
+  }),
+  reqCancelLeave: (e) => guard(async () => {
+    const reason = ($('lc-reason').value || '').trim(); if (!reason) return toast('취소 사유를 입력해 주세요.');
+    await rpc('request_leave_cancel', { p_id: e.id, p_reason: reason }); S.stack = []; await refreshAll(); render(); toast('휴가 취소를 요청했습니다.');
+  }),
+  decideCancel: (e) => guard(async () => {
+    await rpc('decide_leave_cancel', { p_id: e.id, p_decision: e.v, p_comment: null }); S.stack = []; await refreshAll(); render(); toast(e.v === 'approved' ? '휴가 취소를 승인했습니다.' : '휴가 취소를 거절했습니다.');
+  }),
   req: (e) => push('req', { id: e.id, kind: e.k }),
   decide: (e) => guard(async () => {
-    S.busy = true; await rpc('decide_request', { p_kind: e.k, p_id: e.id, p_decision: e.v, p_comment: null });
+    S.busy = true;
+    if (e.k === 'schedule') await rpc('decide_schedule', { p_id: e.id, p_decision: e.v, p_comment: null });
+    else await rpc('decide_request', { p_kind: e.k, p_id: e.id, p_decision: e.v, p_comment: null });
     S.busy = false; S.stack = []; await refreshAll(); render(); toast(e.v === 'approved' ? '승인했습니다.' : '반려했습니다.');
   }),
   cancel: (e) => guard(async () => {
-    await rpc('cancel_request', { p_kind: e.k, p_id: e.id });
+    if (e.k === 'schedule') await rpc('cancel_schedule', { p_id: e.id });
+    else await rpc('cancel_request', { p_kind: e.k, p_id: e.id });
     S.stack = []; await refreshAll(); render(); toast('요청을 취소했습니다.');
   }),
 };
@@ -1194,6 +1325,7 @@ async function tabLoad() {
   render();
 }
 const C = {
+  sd: (el) => { S.sdraft[el.dataset.f] = el.value; render(); },
   ad: (el) => guard(async () => {
     const f = el.dataset.f; S.adraft[f] = el.value;
     if (f === 'date') {
@@ -1204,6 +1336,413 @@ const C = {
     render();
   }),
 };
+/* ---------- 관리자 메뉴 · 비밀번호 변경 ---------- */
+// 관리자 화면은 DB의 접근 규칙(RLS)이 막고 있어서, 관리자가 아닌 사람이 주소를 알아도 쓰거나 볼 수 없다.
+const isAdmin = () => !!(S.me && S.me.role === 'admin');
+const fld = (id, label, html) => `<div class="field"><label for="${id}">${label}</label>${html}</div>`;
+const txt = (id, v = '', type = 'text', extra = '') => `<input id="${id}" type="${type}" value="${esc(v)}" ${extra}>`;
+const opts = (list, cur) => list.map(([v, l]) => `<option value="${esc(v)}" ${String(cur) === String(v) ? 'selected' : ''}>${esc(l)}</option>`).join('');
+const sel = (id, list, cur) => `<select id="${id}">${opts(list, cur)}</select>`;
+const chk = (id, label, on) => `<label style="font-weight:400;display:flex;gap:8px;margin:6px 0"><input type="checkbox" id="${id}" ${on ? 'checked' : ''}>${esc(label)}</label>`;
+const val = (id) => ($(id) ? $(id).value : '');
+const isOn = (id) => !!($(id) && $(id).checked);
+const numOrNull = (v) => (v === '' || v == null ? null : Number(v));
+const orgName = (id) => (S.orgs.find((o) => o.id === id) || {}).name || '소속 없음';
+const STATUS_KO = { active: '재직', leave: '휴직', resigned: '퇴사' };
+const secTitle = (t) => `<div style="padding:14px 4px 4px;font-weight:700">${t}</div>`;
+const leavePolicyOf = () => { const lr = S.settings.leave_rules || {}; return { basis: lr.basis || 'fiscal_year', fiscalYearStartMonth: lr.fiscal_start_month || 1, prorateRounding: lr.prorate_rounding || 'ceil' }; };
+const todayStr = () => S.today;
+const endOfYear = () => `${S.today.slice(0, 4)}-12-31`;
+
+async function saveSetting(key, value) {
+  await send('POST', 'settings', 'on_conflict=key', [{ key, value, updated_by: S.me.id, updated_at: new Date().toISOString() }], 'resolution=merge-duplicates');
+  S.settings[key] = value;
+}
+async function loadSettingsFresh() { const sets = await rest('settings', 'select=key,value'); S.settings = Object.fromEntries(sets.map((x) => [x.key, x.value])); }
+async function loadTargetSched(uid, from, to) {
+  for (let d = from; d <= to; d = addDays(d, 1)) delete S.schedT[d];
+  const rows = await rest('work_schedules', `select=work_date,start_time,end_time&user_id=eq.${uid}&work_date=gte.${from}&work_date=lte.${to}`);
+  for (const x of rows) S.schedT[x.work_date] = { start: x.start_time.slice(0, 5), end: x.end_time.slice(0, 5) };
+}
+
+const ADM_LOAD = {
+  admin: async () => { await loadSignups(); },
+  adminPeople: async () => { S.adm.people = await rest('profiles', 'select=*&order=name'); },
+  adminOrgs: async () => {
+    const [orgs, people] = await Promise.all([rest('org_units', 'select=id,name,parent_id,head_id,head_title,sort'), rest('profiles', 'select=*&order=name')]);
+    S.orgs = orgs; S.adm.people = people;
+  },
+  adminTypes: async () => {
+    const [types, groups] = await Promise.all([rest('leave_types', 'select=*&order=sort'), rest('leave_groups', 'select=id,name,sort&order=sort')]);
+    S.adm.types = types; S.adm.groups = groups; S.groups = groups;
+  },
+  adminHolidays: async () => { S.adm.holidays = await rest('holidays', 'select=*&order=holiday_date'); },
+  adminRules: async () => {
+    const [rules, people] = await Promise.all([rest('work_rule_versions', 'select=*&order=effective_from.desc'), rest('profiles', 'select=id,name,status,role&order=name'), loadSettingsFresh()]);
+    S.adm.rules = rules; S.adm.people = people;
+  },
+  adminGeo: async () => {
+    const [sites, ex, people] = await Promise.all([rest('geo_sites', 'select=*&order=name'), rest('geo_exempt', 'select=user_id'), rest('profiles', 'select=id,name,status&order=name'), loadSettingsFresh()]);
+    S.adm.sites = sites; S.adm.exempt = new Set(ex.map((x) => x.user_id)); S.adm.people = people;
+  },
+  adminAudit: async () => { S.adm.audit = await rest('audit_log', 'select=*&order=id.desc&limit=100'); },
+  adminReport: async () => { S.adm.rep = S.adm.rep || { y: +S.today.slice(0, 4), m: +S.today.slice(5, 7) }; await buildReport(); },
+};
+
+/* ----- 메뉴 ----- */
+function adminHomePage() {
+  const rows = [['signups', '가입 요청', `${signupCount()}건 대기`], ['adminPeople', '직원 관리', '소속·권한·상태, 연차, 일정 대리 등록'], ['adminOrgs', '조직 관리', '조직도와 조직장 (승인권자 후보의 기준)'],
+    ['adminTypes', '휴가 유형', '유형·그룹, 연차 차감, 승인 범위'], ['adminHolidays', '공휴일', '대체공휴일 포함'], ['adminRules', '근무·출근·연차 규칙', '휴게, 출근 허용 시간, 연차 기준, 승인 정책'],
+    ['adminGeo', '위치 제한', '근무지, 반경, 제외 대상'], ['adminReport', '월 근태 집계 · CSV', '급여 정산용'], ['adminAudit', '변경 이력', '누가 무엇을 바꿨는지']];
+  return { header: header({ back: true, title: '관리자 메뉴' }), cls: 'narrow', body: `<div class="card flush">${rows.map(([k, t, sub]) => `<button class="rowbtn" style="border-top:1px solid var(--line)" data-a="${k === 'signups' ? 'signups' : 'go'}" data-k="${k}"><div><div>${t}</div><div class="muted small" style="font-weight:400">${sub}</div></div><span class="chev">${ico('chev')}</span></button>`).join('')}</div>` };
+}
+
+/* ----- 직원 ----- */
+function adminPeoplePage() {
+  const list = S.adm.people || [];
+  return { header: header({ back: true, title: '직원 관리' }), cls: 'narrow', body: `<div class="card flush">${list.map((p) => `<button class="rowbtn" style="font-weight:500;border-top:1px solid var(--line)" data-a="adminPerson" data-id="${p.id}"><div><div>${esc(p.name)} ${p.role === 'admin' ? '<span class="chip live">관리자</span>' : ''} ${p.status !== 'active' ? `<span class="chip">${STATUS_KO[p.status]}</span>` : ''}</div><div class="muted small">${esc(orgName(p.org_id))} · 입사 ${p.hire_date}</div></div><span class="chev">${ico('chev')}</span></button>`).join('') || '<div class="empty">직원이 없습니다.</div>'}</div>
+    <div class="demo">새 직원은 “가입 요청”에서 승인하면 등록됩니다.</div>` };
+}
+function adminPersonPage() {
+  const x = S.adm.person; if (!x) return { header: header({ back: true, title: '직원' }), cls: 'narrow', body: spinner };
+  const p = x.p, rt = x.retire, usedAll = x.used.reduce((s2, u) => s2 + Number(u.deduct_days), 0);
+  return { header: header({ back: true, title: p.name, right: '<button class="btn" style="border:0;color:var(--primary);height:44px" data-a="savePerson">저장</button>' }), cls: 'narrow', body: `
+    ${fld('pe-name', '이름', txt('pe-name', p.name, 'text', 'maxlength="50"'))}
+    ${fld('pe-org', '소속', sel('pe-org', [['', '소속 없음'], ...S.orgs.map((o) => [o.id, o.name])], p.org_id || ''))}
+    ${fld('pe-hire', '입사일', txt('pe-hire', p.hire_date, 'date'))}
+    ${fld('pe-role', '권한', sel('pe-role', [['member', '일반 직원'], ['admin', '관리자']], p.role))}
+    ${fld('pe-status', '상태', sel('pe-status', [['active', '재직'], ['leave', '휴직'], ['resigned', '퇴사']], p.status))}
+    <div class="muted small" style="padding:4px 4px 0">퇴사·휴직으로 바꾸면 로그인은 되지만 출근·신청은 막힙니다. 직원 기록은 지우지 않고 상태로 관리하세요.</div>
+    ${secTitle('연차')}
+    <div class="card"><div class="kv"><b>현재 잔여</b><span>${x.bal && x.bal.period_end ? `${Number(x.bal.remaining)}일 (${x.bal.period_end} 까지)` : '발생 내역 없음'}</span></div>
+      <div class="kv"><b>승인·대기 중 연차 사용 합계</b><span>${usedAll}일</span></div>
+      ${x.grants.map((g) => `<div class="kv" style="padding:6px 0"><span>${g.grant_date} <span class="chip ${g.source === 'manual' ? 'wait' : ''}">${g.source === 'manual' ? '수동' : g.kind}</span> <span class="muted small">~${g.expires_on}</span></span><span>${Number(g.days) >= 0 ? '+' : ''}${Number(g.days)}일 ${g.source === 'manual' ? `<button class="btn" style="height:28px;padding:0 8px" data-a="delGrant" data-id="${g.id}">삭제</button>` : ''}</span></div>`).join('') || '<div class="muted small">발생 내역이 없습니다.</div>'}
+      <div class="btns"><button class="btn block" data-a="regrant">입사일·연차 기준으로 발생 내역 다시 만들기</button></div>
+      <div class="muted small">‘다시 만들기’는 자동 발생분만 새로 계산하고, 수동 조정은 그대로 둡니다.</div>
+      <div class="field" style="margin-top:12px"><label>수동 조정 (일수는 음수도 가능)</label><div class="pair"><input id="mg-days" type="number" step="0.5" placeholder="일수"><input id="mg-exp" type="date" value="${endOfYear()}"></div><input id="mg-note" type="text" maxlength="100" placeholder="사유 (예: 이월)" style="margin-top:8px"></div>
+      <div class="btns"><button class="btn block" data-a="addManual">수동 조정 추가</button></div></div>
+    ${secTitle('퇴직 연차 정산 (계산 도구)')}
+    <div class="card"><div class="field" style="margin-top:0"><label for="rt-date">퇴직일</label>${txt('rt-date', rt ? rt.date : S.today, 'date')}</div>
+      <div class="btns"><button class="btn block" data-a="retireCalc">입사일 기준으로 계산</button></div>
+      ${rt ? `<div class="kv"><b>입사일 기준 발생 총량</b><span>${rt.res.hireBasisTotal}일</span></div><div class="kv"><b>실제 부여 총량(현재 기준)</b><span>${rt.res.fiscalBasisTotal}일</span></div>
+        <div class="kv"><b>${rt.res.extraDays >= 0 ? '추가로 인정할 일수' : '초과 부여 일수'}</b><span class="${rt.res.extraDays >= 0 ? 'green' : 'sun'}"><b>${Math.abs(rt.res.extraDays)}일</b></span></div>
+        <div class="kv"><b>사용한 연차</b><span>${rt.used}일</span></div><div class="kv"><b>미사용 (입사일 기준)</b><span>${rt.res.unusedHireBasis}일</span></div>
+        <div class="muted small">참고용 계산입니다. 연차수당 지급 여부와 금액은 인사·노무 검토 후 확정하세요.</div>` : ''}</div>
+    ${secTitle('위치 제한 · 일정')}
+    <div class="card">${chk('pe-exempt', '위치 제한 제외 (외근·재택 등)', x.exempt)}
+      <div class="btns"><button class="btn" data-a="toggleExemptP">제외 설정 저장</button><button class="btn primary" data-a="adminSchedNew" data-id="${p.id}">근무일정 대리 등록</button></div></div>` };
+}
+
+/* ----- 조직 ----- */
+function descendants(id) { const out = new Set(); const walk = (pid) => { for (const o of S.orgs) if (o.parent_id === pid && !out.has(o.id)) { out.add(o.id); walk(o.id); } }; walk(id); return out; }
+function orgRows() {
+  const kids = (pid) => S.orgs.filter((o) => (o.parent_id ?? null) === pid).sort((a, b) => (a.sort - b.sort) || a.name.localeCompare(b.name));
+  const out = []; const walk = (pid, depth) => { for (const o of kids(pid)) { out.push({ o, depth }); walk(o.id, depth + 1); } }; walk(null, 0); return out;
+}
+function adminOrgsPage() {
+  const people = S.adm.people || [];
+  return { header: header({ back: true, title: '조직 관리', right: '<button class="btn" style="border:0;color:var(--primary);height:44px" data-a="adminOrgNew">+ 추가</button>' }), cls: 'narrow', body: `<div class="card flush">${orgRows().map(({ o, depth }) => {
+    const head = people.find((p) => p.id === o.head_id), n = people.filter((p) => p.org_id === o.id).length;
+    return `<button class="rowbtn" style="font-weight:500;border-top:1px solid var(--line);padding-left:${16 + depth * 20}px" data-a="adminOrg" data-id="${o.id}"><div><div>${esc(o.name)}</div><div class="muted small">${esc(o.head_title)}: ${head ? esc(head.name) : '공석'} · ${n}명</div></div><span class="chev">${ico('chev')}</span></button>`;
+  }).join('') || '<div class="empty">조직이 없습니다.</div>'}</div>
+    <div class="demo">조직장은 승인권자 후보의 기준이 됩니다. 팀원의 후보는 소속 조직장 → 상위 조직장 순으로 나옵니다.</div>` };
+}
+function adminOrgPage(p) {
+  const o = p.id ? S.orgs.find((x) => x.id === p.id) : { name: '', parent_id: '', head_id: '', head_title: '팀장' };
+  const ban = p.id ? new Set([p.id, ...descendants(p.id)]) : new Set();
+  const members = (S.adm.people || []).filter((x) => x.status === 'active');
+  const used = p.id ? (S.adm.people || []).filter((x) => x.org_id === p.id).length + S.orgs.filter((x) => x.parent_id === p.id).length : 0;
+  return { header: header({ back: true, title: p.id ? '조직 수정' : '조직 추가', right: '<button class="btn" style="border:0;color:var(--primary);height:44px" data-a="saveOrg">저장</button>' }), cls: 'narrow', body: `
+    ${fld('og-name', '조직 이름', txt('og-name', o.name, 'text', 'maxlength="50"'))}
+    ${fld('og-parent', '상위 조직', sel('og-parent', [['', '없음 (최상위)'], ...S.orgs.filter((x) => !ban.has(x.id)).map((x) => [x.id, x.name])], o.parent_id || ''))}
+    ${fld('og-head', '조직장', sel('og-head', [['', '공석'], ...members.map((x) => [x.id, x.name])], o.head_id || ''))}
+    ${fld('og-title', '조직장 직책 (팀장, 부서장, 임원 …)', txt('og-title', o.head_title, 'text', 'maxlength="20"'))}
+    ${p.id ? `<div class="btns"><button class="btn danger block" data-a="delOrg" data-id="${p.id}" ${used ? 'disabled' : ''}>조직 삭제</button></div><div class="muted small" style="padding:0 4px">${used ? '소속 직원이나 하위 조직이 있으면 삭제할 수 없습니다.' : '비어 있는 조직만 삭제할 수 있습니다.'}</div>` : ''}` };
+}
+
+/* ----- 휴가 유형 ----- */
+const SCOPES = [['default', '기본 정책'], ['0', '소속 조직장만'], ['1', '1단계 위까지'], ['2', '2단계 위까지'], ['all', '최상위까지']];
+const DEDS = [['annual', '연차에서 차감'], ['quota', '유형별 자체 한도'], ['none', '차감 없음']];
+function adminTypesPage() {
+  const groups = S.adm.groups || [], types = S.adm.types || [];
+  return { header: header({ back: true, title: '휴가 유형', right: '<button class="btn" style="border:0;color:var(--primary);height:44px" data-a="adminTypeNew">+ 유형</button>' }), cls: 'narrow', body: `${groups.map((g) => { const ts = types.filter((t) => t.group_id === g.id); return `<div class="card flush"><div style="padding:12px 16px;font-weight:700;background:var(--off)">${esc(g.name)} ${ts.length ? '' : `<button class="btn" style="height:28px;padding:0 8px;float:right" data-a="delGroup" data-id="${g.id}">그룹 삭제</button>`}</div>${ts.map((t) => `<button class="rowbtn" style="font-weight:500;border-top:1px solid var(--line)" data-a="adminType" data-id="${t.id}"><div>${esc(typeLabel(t))}${t.active ? '' : ' <span class="chip">사용 안 함</span>'}<div class="muted small">${t.deduct_from === 'annual' ? '연차 차감' : t.deduct_from === 'quota' ? `자체 한도 ${t.quota_days}일` : '차감 없음'}</div></div><span class="chev">${ico('chev')}</span></button>`).join('') || '<div class="empty small">유형 없음</div>'}</div>`; }).join('')}
+    ${fld('gp-name', '휴가 그룹 추가', txt('gp-name', '', 'text', 'maxlength="30" placeholder="예: 육아휴직"'))}<div class="btns"><button class="btn block" data-a="addGroup">그룹 추가</button></div>` };
+}
+function adminTypePage() {
+  const d = S.adm.typeDraft, groups = S.adm.groups || [];
+  return { header: header({ back: true, title: d.id ? '휴가 유형 수정' : '휴가 유형 추가', right: '<button class="btn" style="border:0;color:var(--primary);height:44px" data-a="saveType">저장</button>' }), cls: 'narrow', body: `
+    ${fld('ty-name', '이름', txt('ty-name', d.name, 'text', 'maxlength="60"'))}
+    ${fld('ty-group', '그룹', sel('ty-group', groups.map((g) => [g.id, g.name]), d.group_id || ''))}
+    <div class="field"><label>구성요소 (유급 인정 분 · 연차 차감 일수)</label>${d.components.map((c, i) => `<div class="comp"><input id="ty-c${i}-l" type="text" value="${esc(c.label)}" aria-label="이름">
+      <div class="r"><label class="small muted">유급 인정(분)<input id="ty-c${i}-m" type="number" min="0" max="1440" step="30" value="${c.minutes}"></label><label class="small muted">연차 차감(일)<input id="ty-c${i}-d" type="number" min="0" step="0.5" value="${c.deduct_days}"></label></div>
+      ${d.components.length > 1 ? `<button class="btn danger" style="margin-top:8px;height:36px" data-a="rmComp2" data-i="${i}">삭제</button>` : ''}</div>`).join('')}<button class="btn" data-a="addComp2">+ 구성요소 추가 (예: 공가 + 반차)</button></div>
+    ${fld('ty-ded', '차감 대상', sel('ty-ded', DEDS, d.deduct_from))}
+    ${fld('ty-quota', '연 한도 일수 (자체 한도일 때)', txt('ty-quota', d.quota_days ?? '', 'number', 'min="0" step="0.5"'))}
+    ${fld('ty-max', '최대 선택 일수 (비우면 제한 없음)', txt('ty-max', d.max_days ?? '', 'number', 'min="1"'))}
+    ${fld('ty-scope', '승인권자 선택 범위', sel('ty-scope', SCOPES, d.approval_scope))}
+    <div class="field">${chk('ty-nw', '주말·공휴일도 선택 가능 (경조휴가 등)', d.allow_non_workdays)}${chk('ty-sr', '달력에 사유 표시', d.show_reason)}${chk('ty-act', '사용', d.active)}</div>` };
+}
+function readTypeForm() {
+  const d = S.adm.typeDraft;
+  d.name = val('ty-name').trim(); d.group_id = val('ty-group') || null; d.deduct_from = val('ty-ded'); d.quota_days = numOrNull(val('ty-quota')); d.max_days = numOrNull(val('ty-max'));
+  d.approval_scope = val('ty-scope'); d.allow_non_workdays = isOn('ty-nw'); d.show_reason = isOn('ty-sr'); d.active = isOn('ty-act');
+  d.components = d.components.map((c, i) => ({ label: val(`ty-c${i}-l`).trim() || '휴가', minutes: Number(val(`ty-c${i}-m`) || 0), deduct_days: Number(val(`ty-c${i}-d`) || 0) }));
+}
+
+/* ----- 공휴일 ----- */
+function adminHolidaysPage() {
+  const list = S.adm.holidays || [];
+  return { header: header({ back: true, title: '공휴일' }), cls: 'narrow', body: `<div class="card"><div class="pair"><input id="hd-date" type="date" aria-label="날짜"><input id="hd-name" type="text" maxlength="30" placeholder="이름 (예: 설날)" aria-label="이름"></div><div class="btns"><button class="btn primary block" data-a="addHoliday">공휴일 추가</button></div></div>
+    <div class="card flush">${list.map((h) => `<div class="kv" style="padding:10px 16px;border-top:1px solid var(--line)"><span>${h.holiday_date} (${DOW[dayOfWeek(h.holiday_date)]}) · ${esc(h.name)}</span><button class="btn" style="height:30px;padding:0 10px" data-a="delHoliday" data-d="${h.holiday_date}">삭제</button></div>`).join('') || '<div class="empty">등록된 공휴일이 없습니다.</div>'}</div>
+    <div class="demo">공휴일은 해마다 직접 입력합니다. 대체공휴일도 추가해 주세요. 휴가 신청·소정근로시간 계산에 반영됩니다.</div>` };
+}
+
+/* ----- 규칙 ----- */
+function adminRulesPage() {
+  const rules = S.adm.rules || [], cur = rules.find((r) => r.effective_from <= S.today) || rules[0] || { break_minutes: 60, daily_minutes: 480, weekly_holiday_dow: [0] };
+  const ck = S.settings.clock_rules || {}, lr = leavePolicyOf(), ap = S.settings.approval_policy || {}, notice = (S.settings.notice || {}).leave_request || '', sp = (S.settings.signup_policy || {}).allowed_domains || [];
+  const members = (S.adm.people || []).filter((p) => p.status === 'active');
+  const level = ap.max_levels_up == null ? 'all' : String(ap.max_levels_up);
+  return { header: header({ back: true, title: '근무·출근·연차 규칙' }), cls: 'narrow', body: `
+    ${secTitle('근무 규칙 (저장하면 오늘부터 적용)')}
+    ${fld('wr-break', '하루 휴게 고정 공제 (분)', txt('wr-break', cur.break_minutes, 'number', 'min="0" max="240" step="5"'))}
+    ${fld('wr-hours', '하루 소정·휴가 환산 시간 (시간)', txt('wr-hours', cur.daily_minutes / 60, 'number', 'min="1" max="12" step="0.5"'))}
+    <div class="field"><label>휴일근로로 따로 집계할 요일</label>${chk('wr-sun', '일요일', (cur.weekly_holiday_dow || []).includes(0))}${chk('wr-sat', '토요일', (cur.weekly_holiday_dow || []).includes(6))}<div class="muted small">공휴일은 항상 휴일근로로 분리됩니다.</div></div>
+    <div class="btns"><button class="btn primary block" data-a="saveWork">근무 규칙 저장</button></div>
+    ${secTitle('출근 규칙')}
+    <div class="field">${chk('ck-req', '근무일정이 승인된 날에만 출근 가능', ck.require_schedule !== false)}</div>
+    ${fld('ck-min', '일정 시작 몇 분 전부터 출근 가능', txt('ck-min', ck.before_start_minutes ?? 30, 'number', 'min="0" max="240" step="5"'))}
+    <div class="btns"><button class="btn primary block" data-a="saveClock">출근 규칙 저장</button></div>
+    ${secTitle('연차 기준')}
+    ${fld('lr-basis', '연차 부여 기준', sel('lr-basis', [['fiscal_year', '회계연도 기준 (퇴직 시 입사일 기준 재정산)'], ['hire_date', '입사일 기준']], lr.basis))}
+    ${fld('lr-month', '회계연도 시작 월', sel('lr-month', Array.from({ length: 12 }, (_, i) => [i + 1, `${i + 1}월`]), lr.fiscalYearStartMonth))}
+    ${fld('lr-round', '비례 연차 0.5일 단위 처리', sel('lr-round', [['ceil', '올림'], ['round', '반올림'], ['floor', '내림']], lr.prorateRounding))}
+    <div class="muted small" style="padding:0 4px">기준을 바꿔도 이미 만든 발생 내역은 그대로입니다. 직원 관리에서 “발생 내역 다시 만들기”를 눌러야 반영됩니다.</div>
+    <div class="btns"><button class="btn primary block" data-a="saveLeaveRules">연차 기준 저장</button></div>
+    ${secTitle('승인 정책')}
+    ${fld('ap-level', '승인권자 선택 범위 (기본)', sel('ap-level', SCOPES.filter((x) => x[0] !== 'default'), level))}
+    <div class="field"><label>항상 후보에 추가할 사람</label>${members.map((p) => chk(`ap-x-${p.id}`, p.name, (ap.extra_approver_ids || []).includes(p.id))).join('')}</div>
+    <div class="btns"><button class="btn primary block" data-a="saveApproval">승인 정책 저장</button></div>
+    ${secTitle('안내 문구 · 가입')}
+    ${fld('nt-text', '휴가 신청 안내 문구', `<textarea id="nt-text">${esc(notice)}</textarea>`)}
+    ${fld('sg-dom', '가입 허용 이메일 도메인 (쉼표로 구분, 비우면 제한 없음)', txt('sg-dom', sp.join(', '), 'text', 'placeholder="example.com, example.co.kr"'))}
+    <div class="btns"><button class="btn primary block" data-a="saveNotice">문구·가입 설정 저장</button></div>` };
+}
+
+/* ----- 위치 제한 ----- */
+function adminGeoPage() {
+  const g = S.settings.geofence || { enabled: false, radius_m: 200, max_accuracy_m: 100, apply_in: true, apply_out: true }, sites = S.adm.sites || [];
+  return { header: header({ back: true, title: '위치 제한' }), cls: 'narrow', body: `
+    <div class="field">${chk('gf-on', '위치 제한 사용', g.enabled)}${chk('gf-in', '출근에 적용', g.apply_in !== false)}${chk('gf-out', '퇴근에 적용', g.apply_out !== false)}</div>
+    ${fld('gf-rad', '기본 허용 반경 (m)', txt('gf-rad', g.radius_m ?? 200, 'number', 'min="10" step="10"'))}
+    ${fld('gf-acc', '허용 GPS 오차 (m)', txt('gf-acc', g.max_accuracy_m ?? 100, 'number', 'min="10" step="10"'))}
+    <div class="btns"><button class="btn primary block" data-a="saveGeo">위치 제한 저장</button></div>
+    ${secTitle('근무지')}
+    <div class="card flush">${sites.map((st) => `<button class="rowbtn" style="font-weight:500;border-top:1px solid var(--line)" data-a="adminSite" data-id="${st.id}"><div><div>${esc(st.name)}${st.active ? '' : ' <span class="chip">사용 안 함</span>'}</div><div class="muted small">${st.lat}, ${st.lng} · 반경 ${st.radius_m ?? '기본'}${st.radius_m ? 'm' : ''}</div></div><span class="chev">${ico('chev')}</span></button>`).join('') || '<div class="empty">등록된 근무지가 없습니다.</div>'}</div>
+    <div class="btns"><button class="btn block" data-a="adminSiteNew">+ 근무지 추가</button></div>
+    ${secTitle('위치 제한 제외 대상')}
+    <div class="card">${(S.adm.people || []).filter((p) => p.status === 'active').map((p) => `<label style="font-weight:400;display:flex;gap:8px;margin:6px 0"><input type="checkbox" ${S.adm.exempt && S.adm.exempt.has(p.id) ? 'checked' : ''} data-a="exemptToggle" data-id="${p.id}">${esc(p.name)}</label>`).join('')}</div>` };
+}
+function adminSitePage(p) {
+  const st = p.id ? (S.adm.sites || []).find((x) => x.id === p.id) : { name: '', lat: 37.5663, lng: 126.9779, radius_m: null, active: true };
+  return { header: header({ back: true, title: p.id ? '근무지 수정' : '근무지 추가', right: '<button class="btn" style="border:0;color:var(--primary);height:44px" data-a="saveSite">저장</button>' }), cls: 'narrow', body: `
+    ${fld('st-name', '이름', txt('st-name', st.name, 'text', 'maxlength="50"'))}
+    <div class="field"><div class="pair"><label class="small muted">위도<input id="st-lat" type="number" step="0.000001" value="${st.lat}"></label><label class="small muted">경도<input id="st-lng" type="number" step="0.000001" value="${st.lng}"></label></div>
+      <div class="btns"><button class="btn block" data-a="siteHere">현재 위치로 설정 (이 기기의 GPS)</button></div></div>
+    ${fld('st-rad', '이 근무지만 다른 반경 (m, 비우면 기본값)', txt('st-rad', st.radius_m ?? '', 'number', 'min="10"'))}
+    <div class="field">${chk('st-act', '사용', st.active)}</div>
+    ${p.id ? `<div class="btns"><button class="btn danger block" data-a="delSite" data-id="${p.id}">근무지 삭제</button></div>` : ''}` };
+}
+
+/* ----- 월 근태 집계 / CSV ----- */
+async function buildReport() {
+  const r = S.adm.rep, from = `${r.y}-${p2(r.m)}-01`, to = `${r.y}-${p2(r.m)}-${p2(daysInMonth(r.y, r.m))}`;
+  const [people, recs, lds] = await Promise.all([
+    restAll('profiles', 'select=id,name,org_id,status,hire_date&order=name'),
+    restAll('attendance_records', `select=user_id,work_date,clock_in,clock_out&work_date=gte.${from}&work_date=lte.${to}`),
+    restAll('leave_days', `select=user_id,leave_date,minutes,leave_requests(status)&active=eq.true&leave_date=gte.${from}&leave_date=lte.${to}`),
+  ]);
+  const hol = Object.keys(S.holidays), byU = (arr, k) => { const m = {}; for (const x of arr) (m[x[k]] = m[x[k]] || []).push(x); return m; };
+  const ru = byU(recs, 'user_id'), lu = byU(lds, 'user_id');
+  const sch = scheduledMinutes({ year: r.y, month: r.m, holidays: hol, dailyMinutes: S.policy.leaveHoursPerDay * 60 });
+  r.rows = people.filter((p) => p.status !== 'resigned' || (ru[p.id] || []).length).map((p) => {
+    const records = (ru[p.id] || []).filter((x) => x.clock_out).map((x) => ({ date: x.work_date, clockIn: hmSeoul(x.clock_in), clockOut: hmSeoul(x.clock_out) }));
+    const leaves = (lu[p.id] || []).filter((x) => x.leave_requests && x.leave_requests.status === 'approved').map((x) => ({ date: x.leave_date, minutes: x.minutes }));
+    const s2 = summarizeMonth({ year: r.y, month: r.m, records, leaves, holidays: hol, policy: S.policy });
+    return { id: p.id, name: p.name, org: orgName(p.org_id), days: s2.workDays, work: s2.workMinutes, leave: s2.leaveMinutes, weekday: s2.weekdayMinutes, holiday: s2.holidayWorkMinutes, scheduled: sch.minutes };
+  });
+}
+const h2 = (min) => (Math.round((min / 60) * 100) / 100).toFixed(2);
+function reportCsv() {
+  const r = S.adm.rep, head = ['이름', '소속', '근무일수', '실근로(시간)', '휴가 환산(시간)', '평일 합계(시간)', '휴일근로(시간)', '월 소정(시간)', '평일 합계-소정(시간)'];
+  const q = (v) => `"${String(v).replace(/"/g, '""')}"`;
+  return [head, ...(r.rows || []).map((x) => [x.name, x.org, x.days, h2(x.work), h2(x.leave), h2(x.weekday), h2(x.holiday), h2(x.scheduled), h2(x.weekday - x.scheduled)])].map((row) => row.map(q).join(',')).join('\r\n');
+}
+function adminReportPage() {
+  const r = S.adm.rep || { y: 2026, m: 1, rows: [] };
+  return { header: header({ back: true, title: '월 근태 집계' }), cls: '', body: `<div class="bleed"><div class="calhd"><button class="ib" data-a="repNav" data-n="-1" aria-label="이전 달">${ico('back')}</button><b>${r.m}월 ${r.y}</b><button class="ib" data-a="repNav" data-n="1" aria-label="다음 달">${ico('chev')}</button></div></div>
+    <div class="btns"><button class="btn primary block" data-a="repCsv">CSV 내려받기 (엑셀에서 열기)</button></div>
+    <div class="card flush" style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px;white-space:nowrap"><thead><tr style="background:var(--off)">${['이름', '소속', '일수', '실근로', '휴가', '평일합계', '휴일근로', '소정'].map((t) => `<th style="padding:8px;text-align:left">${t}</th>`).join('')}</tr></thead>
+      <tbody>${(r.rows || []).map((x) => `<tr style="border-top:1px solid var(--line)"><td style="padding:8px">${esc(x.name)}</td><td style="padding:8px">${esc(x.org)}</td><td style="padding:8px">${x.days}</td><td style="padding:8px">${h2(x.work)}</td><td style="padding:8px">${h2(x.leave)}</td><td style="padding:8px"><b>${h2(x.weekday)}</b></td><td style="padding:8px">${h2(x.holiday)}</td><td style="padding:8px">${h2(x.scheduled)}</td></tr>`).join('') || '<tr><td style="padding:16px" colspan="8">데이터가 없습니다.</td></tr>'}</tbody></table></div>
+    <div class="demo">시간은 소수 시간(예: 7.75 = 7시간 45분)입니다. 휴가는 승인된 것만 환산하고, 휴게 ${S.policy.breakMinutes}분을 고정 공제한 값입니다.</div>` };
+}
+
+/* ----- 변경 이력 ----- */
+function adminAuditPage() {
+  const rows = S.adm.audit || [], TB = { settings: '설정', profiles: '직원', org_units: '조직', holidays: '공휴일', leave_types: '휴가 유형', leave_groups: '휴가 그룹', leave_grants: '연차 발생', leave_requests: '휴가 요청', attendance_records: '출퇴근 기록', attendance_requests: '정정 요청', work_schedules: '근무일정', schedule_requests: '일정 요청', geo_sites: '근무지', geo_exempt: '위치 제외', work_rule_versions: '근무 규칙', signup_requests: '가입 요청' }, OP = { INSERT: '추가', UPDATE: '수정', DELETE: '삭제' };
+  const kst = (t) => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul', dateStyle: 'short', timeStyle: 'short' }).format(new Date(t));
+  return { header: header({ back: true, title: '변경 이력' }), cls: 'narrow', body: `<div class="card flush">${rows.map((a) => `<div class="kv" style="padding:10px 16px;border-top:1px solid var(--line)"><span><b>${esc(TB[a.table_name] || a.table_name)}</b> ${OP[a.op] || a.op}<div class="muted small">${a.actor ? esc((person(a.actor) || {}).name || '사용자') : 'DB 직접 변경'}</div></span><span class="muted small">${kst(a.at)}</span></div>`).join('') || '<div class="empty">기록이 없습니다.</div>'}</div><div class="demo">최근 100건만 보여 줍니다.</div>` };
+}
+
+/* ----- 비밀번호 변경 ----- */
+function pwPage() {
+  return { header: header({ back: true, title: '비밀번호 변경' }), cls: 'narrow', body: `${fld('pw-new', '새 비밀번호 (8자 이상)', txt('pw-new', '', 'password', 'autocomplete="new-password"'))}${fld('pw-new2', '새 비밀번호 확인', txt('pw-new2', '', 'password', 'autocomplete="new-password"'))}<div class="btns"><button class="btn primary block" data-a="changePw">변경</button></div><div class="demo">비밀번호를 잊어버렸다면 관리자에게 Supabase에서 재설정을 요청하세요. (이메일 재설정은 메일 발송 설정이 필요합니다.)</div>` };
+}
+
+Object.assign(PAGES, { admin: adminHomePage, adminPeople: adminPeoplePage, adminPerson: adminPersonPage, adminOrgs: adminOrgsPage, adminOrg: adminOrgPage, adminTypes: adminTypesPage, adminType: adminTypePage, adminHolidays: adminHolidaysPage, adminRules: adminRulesPage, adminGeo: adminGeoPage, adminSite: adminSitePage, adminReport: adminReportPage, adminAudit: adminAuditPage, pw: pwPage });
+
+/* ----- 동작 ----- */
+const need = () => { if (!isAdmin()) throw new ApiError(403, { message: 'forbidden' }); };
+const refreshStaticQuiet = async () => { try { await loadStatic(); } catch (e) { /* 다음 새로고침 때 반영 */ } };
+Object.assign(A, {
+  go: (e) => guard(async () => { if (e.k !== 'pw') need(); if (ADM_LOAD[e.k]) await ADM_LOAD[e.k](); push(e.k); }),
+
+  adminPerson: (e) => guard(async () => {
+    need(); const p = S.adm.people.find((x) => x.id === e.id);
+    const [grants, bal, ex, used] = await Promise.all([
+      rest('leave_grants', `select=*&user_id=eq.${p.id}&order=grant_date.desc`), rpc('leave_summary', { p_user: p.id }),
+      rest('geo_exempt', `select=user_id&user_id=eq.${p.id}`), rest('leave_days', `select=deduct_days,leave_date&user_id=eq.${p.id}&active=eq.true&deduct_from=eq.annual`),
+    ]);
+    S.adm.person = { p, grants, bal, exempt: ex.length > 0, used, retire: null }; push('adminPerson', { id: p.id });
+  }),
+  savePerson: () => guard(async () => {
+    need(); const x = S.adm.person, p = x.p, name = val('pe-name').trim(), hire = val('pe-hire'), role = val('pe-role'), status = val('pe-status'), org = val('pe-org') || null;
+    if (!name) return toast('이름을 입력해 주세요.'); if (!hire) return toast('입사일을 입력해 주세요.');
+    if (p.id === S.me.id && (role !== 'admin' || status !== 'active')) return toast('본인의 관리자 권한이나 재직 상태는 바꿀 수 없습니다. 다른 관리자에게 요청하세요.');
+    await send('PATCH', 'profiles', `id=eq.${p.id}`, { name, org_id: org, hire_date: hire, role, status });
+    Object.assign(p, { name, org_id: org, hire_date: hire, role, status }); await refreshStaticQuiet(); toast('저장했습니다.'); render();
+  }),
+  regrant: () => guard(async () => {
+    need(); const x = S.adm.person, p = x.p;
+    const grants = generateGrants(p.hire_date, S.today, leavePolicyOf());
+    const n = await rpc('admin_replace_auto_grants', { p_user: p.id, p_grants: grants.map((g) => ({ kind: g.kind, date: g.date, days: g.days, expires: g.expires })) });
+    x.grants = await rest('leave_grants', `select=*&user_id=eq.${p.id}&order=grant_date.desc`); x.bal = await rpc('leave_summary', { p_user: p.id });
+    render(); toast(`연차 발생 내역 ${n}건을 만들었습니다.`);
+  }),
+  addManual: () => guard(async () => {
+    need(); const x = S.adm.person, days = Number(val('mg-days')), exp = val('mg-exp'), note = val('mg-note').trim();
+    if (!val('mg-days') || Number.isNaN(days) || days === 0) return toast('조정할 일수를 입력해 주세요.'); if (!exp) return toast('소멸일을 입력해 주세요.'); if (!note) return toast('사유를 입력해 주세요.');
+    await send('POST', 'leave_grants', '', [{ user_id: x.p.id, kind: 'manual', grant_date: S.today, days, expires_on: exp, source: 'manual', note, created_by: S.me.id }]);
+    x.grants = await rest('leave_grants', `select=*&user_id=eq.${x.p.id}&order=grant_date.desc`); x.bal = await rpc('leave_summary', { p_user: x.p.id }); render(); toast('수동 조정을 추가했습니다.');
+  }),
+  delGrant: (e) => guard(async () => {
+    need(); const x = S.adm.person; await send('DELETE', 'leave_grants', `id=eq.${e.id}&source=eq.manual`);
+    x.grants = await rest('leave_grants', `select=*&user_id=eq.${x.p.id}&order=grant_date.desc`); x.bal = await rpc('leave_summary', { p_user: x.p.id }); render(); toast('삭제했습니다.');
+  }),
+  retireCalc: () => {
+    const x = S.adm.person, date = val('rt-date'); if (!date) return toast('퇴직일을 입력해 주세요.');
+    const used = x.used.filter((u) => u.leave_date <= date).reduce((s2, u) => s2 + Number(u.deduct_days), 0);
+    x.retire = { date, used, res: retirementSettlement({ hireDate: x.p.hire_date, retireDate: date, usedDays: used, leavePolicy: leavePolicyOf() }) }; render();
+  },
+  toggleExemptP: () => guard(async () => {
+    need(); const x = S.adm.person, on = isOn('pe-exempt');
+    if (on) await send('POST', 'geo_exempt', 'on_conflict=user_id', [{ user_id: x.p.id }], 'resolution=ignore-duplicates'); else await send('DELETE', 'geo_exempt', `user_id=eq.${x.p.id}`);
+    x.exempt = on; toast('저장했습니다.');
+  }),
+  adminSchedNew: (e) => guard(async () => {
+    need(); const cal = { y: +S.today.slice(0, 4), m: +S.today.slice(5, 7) }, [a, b] = gridRange(cal); await loadTargetSched(e.id, a, b);
+    S.sdraft = { target: e.id, action: 'set', cal, picked: [], items: {}, start: '09:00', end: '18:00', reason: '', approverId: null, approvers: null }; push('sched');
+  }),
+
+  adminOrgNew: () => push('adminOrg', { id: null }),
+  adminOrg: (e) => push('adminOrg', { id: e.id }),
+  saveOrg: () => guard(async () => {
+    need(); const top = S.stack[S.stack.length - 1], body = { name: val('og-name').trim(), parent_id: val('og-parent') || null, head_id: val('og-head') || null, head_title: val('og-title').trim() || '조직장' };
+    if (!body.name) return toast('조직 이름을 입력해 주세요.');
+    if (top.id) await send('PATCH', 'org_units', `id=eq.${top.id}`, body); else await send('POST', 'org_units', '', [body]);
+    await ADM_LOAD.adminOrgs(); S.stack.pop(); render(); toast('저장했습니다.');
+  }),
+  delOrg: (e) => guard(async () => { need(); await send('DELETE', 'org_units', `id=eq.${e.id}`); await ADM_LOAD.adminOrgs(); S.stack.pop(); render(); toast('삭제했습니다.'); }),
+
+  adminTypeNew: () => { S.adm.typeDraft = { id: null, name: '', group_id: (S.adm.groups[0] || {}).id || null, components: [{ label: '휴가', minutes: 480, deduct_days: 0 }], deduct_from: 'none', quota_days: null, max_days: null, approval_scope: 'default', allow_non_workdays: false, show_reason: false, active: true }; push('adminType'); },
+  adminType: (e) => { S.adm.typeDraft = JSON.parse(JSON.stringify(S.adm.types.find((t) => t.id === e.id))); push('adminType'); },
+  addComp2: () => { readTypeForm(); S.adm.typeDraft.components.push({ label: '공가', minutes: 240, deduct_days: 0 }); render(); },
+  rmComp2: (e) => { readTypeForm(); S.adm.typeDraft.components.splice(+e.i, 1); render(); },
+  saveType: () => guard(async () => {
+    need(); readTypeForm(); const d = S.adm.typeDraft;
+    if (!d.name) return toast('이름을 입력해 주세요.'); if (!d.group_id) return toast('그룹을 선택해 주세요.');
+    if (d.components.some((c) => !(c.minutes >= 0 && c.minutes <= 1440) || !(c.deduct_days >= 0))) return toast('구성요소의 분(0~1440)과 차감 일수를 확인해 주세요.');
+    if (d.deduct_from === 'quota' && (d.quota_days == null || !(d.quota_days >= 0))) return toast('자체 한도 일수를 입력해 주세요.');
+    const body = { group_id: d.group_id, name: d.name, components: d.components, deduct_from: d.deduct_from, quota_days: d.deduct_from === 'quota' ? d.quota_days : null, show_reason: d.show_reason, active: d.active, approval_scope: d.approval_scope, allow_non_workdays: d.allow_non_workdays, max_days: d.max_days };
+    if (d.id) await send('PATCH', 'leave_types', `id=eq.${d.id}`, body); else await send('POST', 'leave_types', '', [{ ...body, sort: Math.max(0, ...S.adm.types.map((t) => t.sort || 0)) + 1 }]);
+    await ADM_LOAD.adminTypes(); S.types = S.adm.types.filter((t) => t.active); S.stack.pop(); render(); toast('저장했습니다. 사용 안 함으로 바꾼 유형은 새 신청에서 사라집니다.');
+  }),
+  addGroup: () => guard(async () => { need(); const n = val('gp-name').trim(); if (!n) return toast('그룹 이름을 입력해 주세요.'); await send('POST', 'leave_groups', '', [{ name: n, sort: Math.max(0, ...S.adm.groups.map((g) => g.sort || 0)) + 1 }]); await ADM_LOAD.adminTypes(); render(); toast('그룹을 추가했습니다.'); }),
+  delGroup: (e) => guard(async () => { need(); await send('DELETE', 'leave_groups', `id=eq.${e.id}`); await ADM_LOAD.adminTypes(); render(); toast('그룹을 삭제했습니다.'); }),
+
+  addHoliday: () => guard(async () => {
+    need(); const d = val('hd-date'), n = val('hd-name').trim(); if (!d || !n) return toast('날짜와 이름을 입력해 주세요.');
+    await send('POST', 'holidays', 'on_conflict=holiday_date', [{ holiday_date: d, name: n }], 'resolution=merge-duplicates');
+    await ADM_LOAD.adminHolidays(); S.holidays = Object.fromEntries(S.adm.holidays.map((h) => [h.holiday_date, h.name])); S.loaded = new Set(); render(); toast('추가했습니다.');
+  }),
+  delHoliday: (e) => guard(async () => { need(); await send('DELETE', 'holidays', `holiday_date=eq.${e.d}`); await ADM_LOAD.adminHolidays(); S.holidays = Object.fromEntries(S.adm.holidays.map((h) => [h.holiday_date, h.name])); render(); toast('삭제했습니다.'); }),
+
+  saveWork: () => guard(async () => {
+    need(); const brk = Number(val('wr-break')), hrs = Number(val('wr-hours')), dow = [isOn('wr-sun') ? 0 : null, isOn('wr-sat') ? 6 : null].filter((x) => x !== null);
+    if (!(brk >= 0 && brk <= 240)) return toast('휴게시간은 0~240분으로 입력해 주세요.'); if (!(hrs >= 1 && hrs <= 12)) return toast('소정 시간은 1~12시간으로 입력해 주세요.');
+    await send('POST', 'work_rule_versions', 'on_conflict=effective_from', [{ effective_from: S.today, break_minutes: brk, daily_minutes: Math.round(hrs * 60), weekly_holiday_dow: dow }], 'resolution=merge-duplicates');
+    S.policy = { breakMinutes: brk, leaveHoursPerDay: hrs, weeklyHolidayDow: dow }; await ADM_LOAD.adminRules(); S.loaded = new Set(); render(); toast('오늘부터 적용되도록 저장했습니다.');
+  }),
+  saveClock: () => guard(async () => {
+    need(); const m = Number(val('ck-min')); if (!(m >= 0 && m <= 240)) return toast('0~240분으로 입력해 주세요.');
+    await saveSetting('clock_rules', { require_schedule: isOn('ck-req'), before_start_minutes: Math.round(m) }); render(); toast('저장했습니다.');
+  }),
+  saveLeaveRules: () => guard(async () => { need(); await saveSetting('leave_rules', { basis: val('lr-basis'), fiscal_start_month: Number(val('lr-month')), prorate_rounding: val('lr-round') }); render(); toast('저장했습니다.'); }),
+  saveApproval: () => guard(async () => {
+    need(); const lv = val('ap-level'), extra = (S.adm.people || []).filter((p) => p.status === 'active' && isOn(`ap-x-${p.id}`)).map((p) => p.id);
+    await saveSetting('approval_policy', { max_levels_up: lv === 'all' ? null : Number(lv), extra_approver_ids: extra }); render(); toast('저장했습니다.');
+  }),
+  saveNotice: () => guard(async () => {
+    need(); await saveSetting('notice', { leave_request: val('nt-text').trim() });
+    const doms = val('sg-dom').split(',').map((x) => x.trim().toLowerCase()).filter(Boolean);
+    await saveSetting('signup_policy', { allowed_domains: doms }); render(); toast('저장했습니다.');
+  }),
+
+  saveGeo: () => guard(async () => {
+    need(); const rad = Number(val('gf-rad')), acc = Number(val('gf-acc')); if (!(rad >= 10) || !(acc >= 10)) return toast('반경과 오차는 10m 이상으로 입력해 주세요.');
+    await saveSetting('geofence', { enabled: isOn('gf-on'), radius_m: Math.round(rad), max_accuracy_m: Math.round(acc), apply_in: isOn('gf-in'), apply_out: isOn('gf-out') }); render(); toast('저장했습니다.');
+  }),
+  adminSiteNew: () => push('adminSite', { id: null }),
+  adminSite: (e) => push('adminSite', { id: e.id }),
+  siteHere: () => guard(async () => { const q = await getPos(); if (q.error) return toast(geoMessage({ code: q.error })); $('st-lat').value = +q.lat.toFixed(6); $('st-lng').value = +q.lng.toFixed(6); toast('현재 위치를 입력했습니다. 저장을 눌러 주세요.'); }),
+  saveSite: () => guard(async () => {
+    need(); const top = S.stack[S.stack.length - 1], lat = Number(val('st-lat')), lng = Number(val('st-lng')), name = val('st-name').trim();
+    if (!name) return toast('이름을 입력해 주세요.'); if (!(lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180)) return toast('위도·경도를 확인해 주세요.');
+    const body = { name, lat, lng, radius_m: numOrNull(val('st-rad')), active: isOn('st-act') };
+    if (top.id) await send('PATCH', 'geo_sites', `id=eq.${top.id}`, body); else await send('POST', 'geo_sites', '', [body]);
+    await ADM_LOAD.adminGeo(); S.stack.pop(); render(); toast('저장했습니다.');
+  }),
+  delSite: (e) => guard(async () => { need(); await send('DELETE', 'geo_sites', `id=eq.${e.id}`); await ADM_LOAD.adminGeo(); S.stack.pop(); render(); toast('삭제했습니다.'); }),
+  exemptToggle: (e, ev) => guard(async () => {
+    need(); const on = !!(ev && ev.target && ev.target.checked);
+    if (on) await send('POST', 'geo_exempt', 'on_conflict=user_id', [{ user_id: e.id }], 'resolution=ignore-duplicates'); else await send('DELETE', 'geo_exempt', `user_id=eq.${e.id}`);
+    if (on) S.adm.exempt.add(e.id); else S.adm.exempt.delete(e.id);
+  }),
+
+  repNav: (e) => guard(async () => { need(); S.adm.rep = { ...shiftMonth(S.adm.rep, +e.n) }; render(); await buildReport(); render(); }),
+  repCsv: () => {
+    const csv = `\uFEFF${reportCsv()}`, r = S.adm.rep;
+    if (typeof Blob === 'undefined' || typeof URL === 'undefined' || !URL.createObjectURL) return toast('이 기기에서는 파일 내려받기를 지원하지 않습니다.');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = `근태집계_${r.y}-${p2(r.m)}.csv`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  },
+
+  changePw: () => guard(async () => {
+    const a = val('pw-new'), b = val('pw-new2'); if (a.length < 8) return toast('비밀번호는 8자 이상이어야 합니다.'); if (a !== b) return toast('비밀번호 확인이 일치하지 않습니다.');
+    try { await api('PUT', '/auth/v1/user', { password: a }); S.stack.pop(); render(); toast('비밀번호를 변경했습니다.'); }
+    catch (e) { if (e instanceof ApiError && e.status === 401) throw e; toast(/different from the old|same/i.test(e.message || '') ? '이전과 다른 비밀번호를 입력해 주세요.' : /password/i.test(e.message || '') ? '비밀번호 규칙에 맞지 않습니다. 더 길고 복잡하게 만들어 주세요.' : errText(e)); }
+  }),
+});
+
 document.addEventListener('click', (e) => {
   if (e.target.closest('[data-stop]') && !e.target.closest('[data-a]')) return;
   const el = e.target.closest('[data-a]');
@@ -1216,6 +1755,7 @@ document.addEventListener('change', (e) => { const el = e.target.closest && e.ta
 document.addEventListener('input', (e) => {
   const i = e.target.dataset && e.target.dataset.i;
   if (i === 'reason') { S.draft.reason = e.target.value; const b = $('sendBtn'); if (b) b.disabled = !(S.draft.reason.trim() && S.draft.approverId) || S.busy; }
+  if (i === 'sreason') { S.sdraft.reason = e.target.value; const b = $('sendBtnS'); if (b) b.disabled = !(Object.keys(S.sdraft.items).length && S.sdraft.reason.trim() && S.sdraft.approverId) || S.busy; }
   if (i === 'areason') { S.adraft.reason = e.target.value; const b = $('sendBtnA'); if (b) b.disabled = !attOk() || S.busy; }
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && S.view === 'login' && e.target && (e.target.id === 'em' || e.target.id === 'pw' || e.target.id === 'pw2')) (S.authMode === 'signup' ? A.signup() : A.login()); });
