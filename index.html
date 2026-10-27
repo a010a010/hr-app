@@ -1,0 +1,1020 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>근태·휴가</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f2f3f5;--card:#fff;--text:#1b1f27;--muted:#6a7280;--line:#e4e6eb;
+  --primary:#0b66e4;--primary-ink:#fff;--nav:#1f4272;--nav-ink:#b9c6d9;--nav-on:#fff;
+  --green:#16803c;--green-bg:#e3f4e8;--red:#d23b3b;--amber:#8a5a00;--amber-bg:#fff2cf;
+  --teal:#0f9d94;--track:#e3e5ea;--today:#e9f1ff;--dim:rgba(10,14,20,.5);--off:#f5f6f8;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1115;--card:#181b22;--text:#eceef3;--muted:#98a0ad;--line:#2a2f3a;
+    --primary:#4c9aff;--primary-ink:#06101f;--nav:#142a47;--nav-ink:#8fa3bf;--nav-on:#fff;
+    --green:#5fd18a;--green-bg:#17301f;--red:#ff7b7b;--amber:#f5c15a;--amber-bg:#3a2e12;
+    --teal:#33c6bb;--track:#2a2f3a;--today:#1b2a44;--dim:rgba(0,0,0,.65);--off:#14171d;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1115;--card:#181b22;--text:#eceef3;--muted:#98a0ad;--line:#2a2f3a;
+  --primary:#4c9aff;--primary-ink:#06101f;--nav:#142a47;--nav-ink:#8fa3bf;--nav-on:#fff;
+  --green:#5fd18a;--green-bg:#17301f;--red:#ff7b7b;--amber:#f5c15a;--amber-bg:#3a2e12;
+  --teal:#33c6bb;--track:#2a2f3a;--today:#1b2a44;--dim:rgba(0,0,0,.65);--off:#14171d;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Noto Sans KR",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.45;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--card)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.app{max-width:480px;margin:0 auto;min-height:100vh;background:var(--bg);position:relative}
+.hdr{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--card);border-bottom:1px solid var(--line);height:56px;display:flex;align-items:center;gap:6px;padding:0 6px}
+.hdr .ttl{flex:1;font-weight:700;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hdr .logo{flex:1;font-weight:700;font-size:20px;letter-spacing:.2px;color:var(--nav)}
+:root[data-theme="dark"] .hdr .logo{color:var(--text)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .hdr .logo{color:var(--text)}}
+.ib{background:none;border:0;width:44px;height:44px;display:grid;place-items:center;border-radius:10px;position:relative}
+.ib:focus-visible,.btn:focus-visible,.tab:focus-visible,.cell:focus-visible,.rowbtn:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.ib svg{width:24px;height:24px}
+.badge{position:absolute;top:5px;right:4px;min-width:18px;height:18px;border-radius:9px;background:var(--red);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0 4px}
+.badge.gray{background:var(--muted)}
+.main{padding:12px 12px 96px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px;margin-bottom:12px}
+.card.flush{padding:0}
+.rowbtn{display:flex;align-items:center;gap:12px;width:100%;background:none;border:0;padding:16px;text-align:left;font-weight:700}
+.rowbtn svg{width:22px;height:22px;flex:none}
+.rowbtn .chev{margin-left:auto;color:var(--muted)}
+h2{font-size:22px;margin:0 0 12px}
+h3{font-size:17px;margin:0}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.kv{display:flex;justify-content:space-between;padding:9px 0}
+.kv b{font-weight:500}
+.green{color:var(--green)}
+.chip{display:inline-block;padding:2px 9px;border-radius:5px;font-size:13px;background:var(--off);color:var(--muted);font-weight:500}
+.chip.ok{background:var(--green-bg);color:var(--green)}
+.chip.wait{background:var(--amber-bg);color:var(--amber)}
+.chip.no{background:#fde4e4;color:#b42323}
+:root[data-theme="dark"] .chip.no{background:#3b1c1c;color:#ff9b9b}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .chip.no{background:#3b1c1c;color:#ff9b9b}}
+.chip.live{background:var(--today);color:var(--primary)}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:5px;padding:0 16px;height:48px;font-weight:700}
+.btn.primary{background:var(--primary);border-color:var(--primary);color:var(--primary-ink)}
+.btn.danger{color:var(--red)}
+.btn.block{width:100%}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btns{display:flex;gap:10px;margin:14px 0}
+.btns .btn.primary{flex:1}
+.today-line{border-left:3px solid var(--green);padding-left:12px;margin:14px 0}
+.week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-top:10px}
+.tile{background:var(--off);border-radius:6px;padding:8px 2px;text-align:center;font-size:12px;min-height:76px;line-height:1.35;overflow:hidden}
+.tile .d{font-weight:700;font-size:13px;margin-bottom:6px}
+.tile.today{background:var(--today)}
+.tile.today .d{color:var(--primary)}
+.tile .lv{color:var(--primary);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 2px}
+.sun{color:var(--red)}
+.bar{position:relative;height:18px;background:var(--track);border-radius:3px;margin:26px 0 6px}
+.bar .plan{position:absolute;inset:0 auto 0 0;background:color-mix(in srgb,var(--track) 55%,var(--muted));border-radius:3px 0 0 3px}
+.bar .act{position:absolute;inset:0 auto 0 0;background:var(--teal);border-radius:3px 0 0 3px}
+.bar .tick{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--muted)}
+.bar .tick.lim{background:var(--red)}
+.bar .lbl{position:absolute;top:22px;font-size:12px;color:var(--muted);transform:translateX(-50%)}
+.bar .pl{position:absolute;top:-24px;font-size:12px;color:var(--muted);transform:translateX(-50%);white-space:nowrap}
+.sumline{font-weight:700;color:var(--teal);font-size:18px}
+.sumline span{color:var(--muted);font-size:14px;font-weight:500}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--card);border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-bottom:12px}
+.seg button{border:0;background:none;height:44px;font-weight:700;color:var(--muted)}
+.seg button.on{background:var(--primary);color:var(--primary-ink)}
+/* calendars */
+.calhd{display:flex;align-items:center;justify-content:space-between;padding:8px 14px}
+.calhd b{color:var(--primary);font-size:18px}
+.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+.grid .dw{text-align:center;padding:8px 0;font-size:13px;color:var(--muted)}
+.cell{border:0;border-top:1px solid var(--line);background:var(--card);min-height:56px;padding:4px 1px 3px;text-align:center;position:relative;font-size:14px}
+.mcell{border-top:1px solid var(--line);background:var(--card);min-height:76px;padding:4px 1px 3px;text-align:center;font-size:13px;min-width:0;overflow:hidden}
+.mcell .n{display:inline-block;min-width:24px;height:24px;line-height:24px;border-radius:12px;font-size:14px}
+.mcell .n.today{background:var(--primary);color:var(--primary-ink);font-weight:700}
+.mcell .oth{opacity:.5}
+.ev{display:block;margin:2px 1px 0;border-radius:2px;color:#fff;font-size:10px;line-height:15px;padding:0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
+.cell.other{color:var(--muted);opacity:.55}
+.cell.today{background:var(--today)}
+.cell.sel{background:var(--primary);color:var(--primary-ink);font-weight:700}
+.cell.dis{background:linear-gradient(to top right,transparent calc(50% - 1px),var(--line) 50%,transparent calc(50% + 1px)),var(--off);color:var(--muted)}
+.cell.off{color:var(--red)}
+.cell.sel.off{color:var(--primary-ink)}
+.cell.past{color:var(--muted);opacity:.6}
+.cell:disabled{cursor:not-allowed}
+.daylist .dh{padding:12px 16px;font-weight:700;background:var(--bg);border-top:1px solid var(--line)}
+.daylist .it{display:flex;gap:14px;align-items:center;padding:12px 16px;background:var(--card);border-top:1px solid var(--line)}
+.daylist .ico{width:42px;height:42px;border-radius:21px;background:var(--off);display:grid;place-items:center;flex:none}
+.daylist .ico svg{width:20px;height:20px}
+.notice{background:var(--today);color:var(--primary);padding:12px 14px;font-size:14px;display:flex;gap:10px;align-items:flex-start}
+.field{padding:14px 16px;background:var(--card);border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:10px}
+.field label{display:block;font-weight:700;margin-bottom:8px}
+.field input[type=text],.field input[type=number],.field select,.field textarea{width:100%;border:1px solid var(--line);background:var(--card);border-radius:5px;padding:10px;font-size:16px}
+.field textarea{min-height:110px;resize:vertical}
+.pick{display:flex;justify-content:space-between;align-items:center;width:100%;border:0;background:var(--card);padding:16px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);text-align:left}
+.pick .v{color:var(--primary);text-align:right}
+.pick.need .v{color:var(--red)}
+.foot{padding:14px 16px;font-weight:500}
+.sheetbg{position:fixed;inset:0;background:var(--dim);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--card);width:100%;max-width:480px;max-height:86vh;overflow:auto;border-radius:12px 12px 0 0;padding-bottom:env(safe-area-inset-bottom,0px)}
+.sheet .si{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;border:0;background:none;text-align:left;padding:16px 20px;font-size:17px}
+.sheet .sh{padding:16px 20px;color:var(--muted);font-size:14px}
+.sheet .si.on{color:var(--primary);font-weight:700}
+.sheet .grp{padding:10px 20px;background:var(--off);font-weight:700;font-size:14px;position:sticky;top:0}
+.drawer{position:fixed;inset:0 auto 0 0;width:min(86vw,320px);background:var(--card);z-index:60;padding:calc(20px + env(safe-area-inset-top,0px)) 0 20px;overflow:auto}
+.tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--nav);display:grid;grid-template-columns:repeat(5,1fr);padding-bottom:env(safe-area-inset-bottom,0px);z-index:40}
+.tab{background:none;border:0;color:var(--nav-ink);height:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:12px;position:relative}
+.tab svg{width:24px;height:24px}
+.tab.on{color:var(--nav-on);font-weight:700}
+.tab .badge{top:4px;right:calc(50% - 26px)}
+.toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#20242c;color:#fff;border-radius:8px;padding:10px 16px;z-index:80;max-width:88vw;font-size:14px;text-align:center}
+.sw{display:flex;justify-content:space-between;align-items:center;padding:14px 20px}
+.sw input{width:22px;height:22px}
+.pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.comp{border:1px solid var(--line);border-radius:6px;padding:10px;margin-bottom:8px}
+.comp .r{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-top:8px}
+.demo{margin:0 0 10px;padding:8px 12px;border:1px dashed var(--line);border-radius:6px;color:var(--muted);font-size:12px}
+.empty{padding:36px 16px;text-align:center;color:var(--muted)}
+.avgrow{display:grid;grid-template-columns:70px minmax(0,1fr) 64px;gap:8px;align-items:center;margin:8px 0;font-size:13px}
+.avgrow .t{height:10px;background:var(--track);border-radius:3px;position:relative;overflow:hidden}
+.avgrow .t i{position:absolute;inset:0 auto 0 0;background:var(--teal)}
+.avgrow .t em{position:absolute;top:0;bottom:0;width:2px;background:var(--red)}
+.big{font-size:44px;font-weight:700;line-height:1.1}
+/* 월 달력: 좁은 화면에서는 시작 시각만 보여 주고 전체 시간은 아래 목록에서 본다 */
+.evshort{display:none}
+@media (max-width:600px){
+  .evfull{display:none}
+  .evshort{display:inline}
+  .mcell{min-height:64px}
+  .ev{font-size:11px;margin:2px 1px 0;padding:0 1px;text-align:center}
+}
+/* 레이아웃 도우미 */
+.bleed{margin:-12px -12px 0}
+.side{display:none}
+.onlydesk{display:none}
+.split-a{background:var(--card)}
+.shell{display:block}
+/* PC / 넓은 화면: 왼쪽 메뉴 + 넓은 본문 */
+@media (min-width:900px){
+  .app{max-width:none}
+  .shell{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh}
+  .content{min-width:0}
+  .side{display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh;background:var(--nav);color:var(--nav-ink);padding:20px 12px;overflow:auto}
+  .side .brand{color:#fff;font-weight:700;font-size:22px;padding:6px 12px 18px}
+  .side .navbtn{display:flex;align-items:center;gap:12px;width:100%;border:0;background:none;color:var(--nav-ink);padding:12px;border-radius:8px;font-size:15px;text-align:left}
+  .side .navbtn svg{width:22px;height:22px;flex:none}
+  .side .navbtn:hover{background:rgba(255,255,255,.08)}
+  .side .navbtn.on{background:rgba(255,255,255,.14);color:#fff;font-weight:700}
+  .side .navbtn:focus-visible{outline:2px solid #fff;outline-offset:2px}
+  .side .navbtn .badge{position:static;margin-left:auto}
+  .side .sidefoot{margin-top:auto;padding-top:14px;border-top:1px solid rgba(255,255,255,.18)}
+  .side .who{padding:6px 12px 10px;color:#fff}
+  .side .who .muted{color:var(--nav-ink)}
+  .side .navbtn.small{font-size:13px;padding:8px 12px}
+  .tabbar,.menu-btn,.hdr .logo{display:none}
+  .onlydesk{display:block}
+  .hdr{padding:0 24px}
+  .main{max-width:1120px;margin:0 auto;padding:24px 28px 48px}
+  .main.narrow{max-width:680px}
+  .main.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px;align-items:start}
+  .main.grid2>.span2,.main.grid2>.demo{grid-column:1/-1}
+  .bleed{margin:0}
+  .split{display:grid;grid-template-columns:minmax(0,2fr) minmax(300px,1fr);gap:16px;align-items:start}
+  .split-a{border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .split-b{max-height:calc(100vh - 130px);overflow:auto;position:sticky;top:76px;border:1px solid var(--line);border-radius:6px}
+  .mcell{min-height:108px;padding:6px 3px}
+  .ev{font-size:12px;line-height:19px;margin:3px 2px 0;padding:0 4px}
+  .cell{min-height:64px}
+  .field{border:1px solid var(--line);border-radius:6px;margin:0 0 12px}
+  .pick{border:1px solid var(--line);border-radius:6px}
+  .sheetbg{align-items:center}
+  .sheet{border-radius:12px;max-width:440px;max-height:80vh}
+  .toast{bottom:32px}
+}
+@media (prefers-reduced-motion:no-preference){.sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}}
+.login{max-width:380px;margin:0 auto;padding:calc(64px + env(safe-area-inset-top,0px)) 20px 40px}
+.login h1{font-size:26px;margin:0 0 6px;color:var(--nav)}
+:root[data-theme="dark"] .login h1{color:var(--text)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .login h1{color:var(--text)}}
+.login .card{padding:20px}
+.login label{display:block;font-weight:700;margin:14px 0 6px}
+.login input{width:100%;border:1px solid var(--line);background:var(--card);border-radius:5px;padding:12px;font-size:16px}
+.login .err{color:var(--red);margin-top:12px;font-size:14px}
+.spin{display:inline-block;width:18px;height:18px;border:3px solid var(--line);border-top-color:var(--primary);border-radius:50%;animation:sp .8s linear infinite;vertical-align:-3px}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="sheet"></div>
+<div id="toast"></div>
+<script>
+/* 공개용 설정: Project URL과 publishable(anon) 키만 넣는다. secret/service_role 키와 DB 비밀번호는 절대 넣지 않는다. */
+window.APP_CONFIG = { url: 'https://zqfvntplsqftbkfewqsk.supabase.co', key: 'sb_publishable_bXeTU9omjAxUzUijyNzEkg_JmrTo-8v' };
+</script>
+<script>
+/* ---- dates.js ---- */
+// 날짜는 모두 'YYYY-MM-DD' 문자열로 다루고, 내부 계산은 UTC로 해서 시간대 문제를 피한다.
+const pad = (n) => String(n).padStart(2, '0');
+
+function parseYMD(s) {
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d));
+}
+function ymd(d) {
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+}
+function addDays(s, n) {
+  const d = parseYMD(s);
+  d.setUTCDate(d.getUTCDate() + n);
+  return ymd(d);
+}
+// 말일 보정: 1/31 + 1개월 = 2/28(29)
+function addMonths(s, n) {
+  const d = parseYMD(s);
+  const day = d.getUTCDate();
+  const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + n, 1));
+  const last = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth() + 1, 0)).getUTCDate();
+  t.setUTCDate(Math.min(day, last));
+  return ymd(t);
+}
+function diffDays(a, b) {
+  return Math.round((parseYMD(b) - parseYMD(a)) / 86400000);
+}
+function dayOfWeek(s) {
+  return parseYMD(s).getUTCDay(); // 0=일 ... 6=토
+}
+// b 시점에 a로부터 꽉 채운 연수
+function fullYearsBetween(a, b) {
+  const x = parseYMD(a), y = parseYMD(b);
+  let years = y.getUTCFullYear() - x.getUTCFullYear();
+  const before =
+    y.getUTCMonth() < x.getUTCMonth() ||
+    (y.getUTCMonth() === x.getUTCMonth() && y.getUTCDate() < x.getUTCDate());
+  if (before) years -= 1;
+  return years;
+}
+function daysInMonth(year, month) {
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+/* ---- attendance.js ---- */
+
+// 관리자 설정값(policies 테이블)과 1:1로 대응한다.
+const DEFAULT_POLICY = {
+  breakMinutes: 60,          // 하루 고정 휴게 공제 (체류시간과 무관)
+  leaveHoursPerDay: 8,       // 연차 1일 = 8시간으로 환산 (반차는 절반)
+  weeklyHolidayDow: [0],     // 휴일근로로 분리 집계할 요일 (0=일요일)
+};
+
+function toMinutes(hm) {
+  const [h, m] = hm.split(':').map(Number);
+  return h * 60 + m;
+}
+
+// 하루 실근로(분) = 체류시간 - 고정 휴게. 퇴근이 출근보다 이르면 익일 퇴근으로 본다.
+function dailyWorkMinutes(record, policy = DEFAULT_POLICY) {
+  if (!record || !record.clockIn || !record.clockOut) return 0;
+  let stay = toMinutes(record.clockOut) - toMinutes(record.clockIn);
+  if (stay < 0) stay += 24 * 60;
+  return Math.max(0, stay - policy.breakMinutes);
+}
+
+function fmtMinutes(min) {
+  const h = Math.floor(min / 60);
+  const m = Math.round(min % 60);
+  return m === 0 ? `${h}시간` : `${h}시간 ${m}분`;
+}
+
+/**
+ * 월 근태 집계
+ * @param records  [{date, clockIn:'09:00', clockOut:'18:00'}]
+ * @param leaves   승인된 휴가를 일 단위로 펼친 것 [{date, minutes}] — minutes는 휴가 유형의 '유급 인정 시간'.
+ *                 minutes가 없으면 {date, days}를 days × leaveHoursPerDay로 환산(하위 호환).
+ * @param holidays 공휴일 ['YYYY-MM-DD']
+ * 규칙: 휴가는 근무일에만 환산, 휴일(일요일·공휴일) 근무는 평일 합계와 분리 집계.
+ */
+function summarizeMonth({ year, month, records, leaves = [], holidays = [], policy = DEFAULT_POLICY }) {
+  const recByDate = new Map(records.map((r) => [r.date, r]));
+  const leaveByDate = new Map(); // date → 인정 분
+  for (const l of leaves) {
+    const minutes = l.minutes ?? (l.days ?? 0) * policy.leaveHoursPerDay * 60;
+    leaveByDate.set(l.date, (leaveByDate.get(l.date) ?? 0) + minutes);
+  }
+  const holidaySet = new Set(holidays);
+
+  let workMinutes = 0, leaveMinutes = 0, holidayWorkMinutes = 0, workDays = 0;
+  const details = [];
+
+  for (let d = 1; d <= daysInMonth(year, month); d++) {
+    const date = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const isHoliday = policy.weeklyHolidayDow.includes(dayOfWeek(date)) || holidaySet.has(date);
+    const work = dailyWorkMinutes(recByDate.get(date), policy);
+
+    if (isHoliday) {
+      holidayWorkMinutes += work;
+      if (work > 0) details.push({ date, kind: 'holiday', workMinutes: work, leaveMinutes: 0 });
+      continue;
+    }
+    const leave = leaveByDate.get(date) ?? 0;
+    workMinutes += work;
+    leaveMinutes += leave;
+    if (work > 0) workDays += 1;
+    if (work > 0 || leave > 0) details.push({ date, kind: 'weekday', workMinutes: work, leaveMinutes: leave });
+  }
+
+  return {
+    workMinutes,
+    leaveMinutes,
+    weekdayMinutes: workMinutes + leaveMinutes, // 평일 합계 = 실근로 + 휴가 환산
+    holidayWorkMinutes,                          // 휴일근로는 별도
+    workDays,
+    details,
+  };
+}
+
+/**
+ * 월 소정근로시간(분) = (휴일이 아닌 날 수) × 하루 소정시간
+ * 휴일 = weeklyHolidayDow(일요일) + 공휴일·대체공휴일. 토요일은 휴일로 보지 않지만
+ * 이 회사처럼 주 5일제이면 weeklyHolidayDow에 6(토)을 포함해 설정한다.
+ * @param dailyMinutes 하루 소정근로시간(분), 기본 8시간
+ * @param offDow       소정근로일에서 제외할 요일 (기본: 토·일)
+ */
+function scheduledMinutes({ year, month, holidays = [], dailyMinutes = 480, offDow = [0, 6] }) {
+  const holidaySet = new Set(holidays);
+  let days = 0;
+  for (let d = 1; d <= daysInMonth(year, month); d++) {
+    const date = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    if (offDow.includes(dayOfWeek(date)) || holidaySet.has(date)) continue;
+    days += 1;
+  }
+  return { days, minutes: days * dailyMinutes };
+}
+
+</script>
+<script>
+// 근태·휴가 — Supabase 연결 버전.
+// 모든 규칙 검사는 DB(함수·RLS)가 한다. 이 화면은 보여 주고 요청만 보낸다.
+// 외부 라이브러리 없이 fetch로 Supabase의 Auth·REST API를 직접 호출한다.
+const CFG = window.APP_CONFIG;
+const DOW = ['일', '월', '화', '수', '목', '금', '토'];
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const p2 = (n) => String(n).padStart(2, '0');
+const md = (d) => `${+d.slice(5, 7)}/${+d.slice(8, 10)}`;
+const hours = (min) => fmtMinutes(Math.round(min));
+const hash = (s) => { let h = 7; for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
+const palette = ['#9a7b0a', '#7c6f64', '#9d3a63', '#3b5fc0', '#2f9a86', '#d2455b', '#7a3b8f', '#c0662b', '#2a8a9c', '#5b6a2e'];
+const ICON = {
+  home: '<path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+  inbox: '<path d="M3 13l3-8h12l3 8v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M3 13h6a3 3 0 0 0 6 0h6"/>',
+  cal: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  plane: '<path d="M21 3L3 10.5l7 3 3 7z"/><path d="M10 13.5L21 3"/>',
+  menu: '<path d="M4 6h16M4 12h16M4 18h16"/>', back: '<path d="M15 5l-7 7 7 7"/>', chev: '<path d="M9 5l7 7-7 7"/>',
+  bell: '<path d="M6 17V11a6 6 0 0 1 12 0v6l2 2H4z"/><path d="M10 21h4"/>',
+};
+const ico = (k) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg>`;
+
+/* ---------- 시간·날짜 (한국 시간 기준) ---------- */
+const seoulToday = () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul' }).format(new Date());
+const hmSeoul = (ts) => (ts ? new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(ts)) : null);
+const weekStartOf = (d) => addDays(d, -dayOfWeek(d));
+const shiftMonth = (c, n) => { const t = new Date(Date.UTC(c.y, c.m - 1 + n, 1)); return { y: t.getUTCFullYear(), m: t.getUTCMonth() + 1 }; };
+
+/* ---------- Supabase REST 클라이언트 ---------- */
+class ApiError extends Error { constructor(status, body) { super((body && (body.message || body.msg || body.error_description)) || `HTTP ${status}`); this.status = status; this.body = body || {}; this.code = this.body.code; } }
+const store = {
+  get() { try { return JSON.parse(localStorage.getItem('hr_session') || 'null'); } catch (e) { return null; } },
+  set(v) { try { v ? localStorage.setItem('hr_session', JSON.stringify(v)) : localStorage.removeItem('hr_session'); } catch (e) { /* 저장소를 못 쓰면 이번 방문에만 로그인 유지 */ } },
+};
+let session = store.get();
+const parse = async (res) => { const t = await res.text(); try { return t ? JSON.parse(t) : null; } catch (e) { return { message: t }; } };
+function saveSession(j) {
+  session = { access_token: j.access_token, refresh_token: j.refresh_token, expires_at: j.expires_at || Math.floor(Date.now() / 1000) + (j.expires_in || 3600), user: j.user || (session && session.user) };
+  store.set(session);
+}
+async function authCall(path, body) {
+  const res = await fetch(CFG.url + path, { method: 'POST', headers: { apikey: CFG.key, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const j = await parse(res);
+  if (!res.ok) throw new ApiError(res.status, j);
+  return j;
+}
+let refreshing = null;   // 동시에 여러 요청이 나가도 토큰 갱신은 한 번만 한다
+async function ensureSession() {
+  if (!session) throw new ApiError(401, { message: 'no session' });
+  if (session.expires_at - 60 > Math.floor(Date.now() / 1000)) return;
+  if (!refreshing) {
+    refreshing = (async () => {
+      try { saveSession(await authCall('/auth/v1/token?grant_type=refresh_token', { refresh_token: session.refresh_token })); }
+      catch (e) { session = null; store.set(null); throw new ApiError(401, { message: 'session expired' }); }
+    })().finally(() => { refreshing = null; });
+  }
+  await refreshing;
+}
+async function api(method, path, body) {
+  await ensureSession();
+  const res = await fetch(CFG.url + path, {
+    method,
+    headers: { apikey: CFG.key, Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  const j = await parse(res);
+  if (!res.ok) throw new ApiError(res.status, j);
+  return j;
+}
+const rest = (table, query) => api('GET', `/rest/v1/${table}?${query}`);
+const rpc = (fn, args) => api('POST', `/rest/v1/rpc/${fn}`, args || {});
+
+const ERR_EXACT = {
+  'insufficient annual leave': '잔여 연차가 부족합니다.', 'invalid approver': '선택할 수 없는 승인권자입니다.', 'reason required': '사유를 입력해 주세요.',
+  'dates required': '날짜를 선택해 주세요.', 'invalid leave type': '사용할 수 없는 휴가 유형입니다.', 'quota exceeded': '이 휴가의 연 한도를 초과했습니다.',
+  'no leave granted': '발생한 연차가 없습니다. 관리자에게 문의해 주세요.', 'already clocked in today': '오늘은 이미 출근했습니다.', 'no clock-in today': '오늘 출근 기록이 없습니다.',
+  'already clocked out': '이미 퇴근했습니다.', 'record already exists': '그 날짜에 이미 기록이 있습니다. 수정 요청을 이용해 주세요.', 'no record on that date': '그 날짜에 기록이 없습니다.',
+  'full-day leave on that date': '하루 종일 휴가인 날에는 기록을 만들 수 없습니다.', 'invalid times': '퇴근 시각이 출근 시각보다 늦어야 합니다.', 'date out of range': '최근 60일 안의 지난 날짜만 요청할 수 있습니다.',
+  'a pending request already exists for that date': '같은 날짜에 처리 대기 중인 요청이 있습니다.', 'not the approver': '이 요청을 처리할 권한이 없습니다.', 'request is not pending': '이미 처리된 요청입니다.',
+  'cannot cancel': '취소할 수 없는 요청입니다.', forbidden: '권한이 없습니다.', 'inactive or unknown user': '사용할 수 없는 계정입니다. 관리자에게 문의해 주세요.',
+};
+function errText(e) {
+  const m = (e && e.message) || '';
+  if (ERR_EXACT[m]) return ERR_EXACT[m];
+  let x;
+  if ((x = /^past date: (.+)$/.exec(m))) return `${md(x[1])}은(는) 지난 날짜입니다.`;
+  if ((x = /^not a workday: (.+)$/.exec(m))) return `${md(x[1])}은(는) 근무일이 아닙니다.`;
+  if ((x = /^leave already exists on (.+)$/.exec(m))) return `${md(x[1])}에는 이미 휴가가 있습니다.`;
+  if ((x = /^too many days \(max (\d+)\)$/.exec(m))) return `이 유형은 최대 ${x[1]}일까지 선택할 수 있습니다.`;
+  if (/^date beyond current leave period/.test(m)) return '현재 연차 기간을 벗어난 날짜입니다.';
+  if (e && e.status === 0) return '네트워크에 연결할 수 없습니다.';
+  return m ? `오류: ${m}` : '알 수 없는 오류가 발생했습니다.';
+}
+
+/* ---------- 상태 ---------- */
+const S = {
+  view: 'boot', tab: 'home', stack: [], sheet: null, toast: '', busy: false, authError: '', loadError: '',
+  me: null, people: [], orgs: [], groups: [], types: [], holidays: {}, settings: {}, exempt: false,
+  policy: { breakMinutes: 60, leaveHoursPerDay: 8, weeklyHolidayDow: [0] },
+  today: seoulToday(), cal: null, rec: null, seg: 'mine',
+  recs: {}, lv: {}, bal: null, grants: [], myLeave: [], myAtt: [], inboxLeave: [], inboxAtt: [], takenFuture: new Set(),
+  draft: null, adraft: null, loaded: new Set(),
+};
+S.cal = { y: +S.today.slice(0, 4), m: +S.today.slice(5, 7) };
+S.rec = { ...S.cal };
+
+const person = (id) => S.people.find((p) => p.id === id);
+const orgOf = (id) => S.orgs.find((o) => o.id === id);
+const typeOf = (id) => S.types.find((t) => t.id === id);
+const isHoliday = (d) => !!S.holidays[d];
+const isWorkday = (d) => dayOfWeek(d) >= 1 && dayOfWeek(d) <= 5 && !isHoliday(d);
+const isOffDay = (d) => S.policy.weeklyHolidayDow.includes(dayOfWeek(d)) || isHoliday(d);
+const typeSums = (t) => ({ paid: t.components.reduce((s, c) => s + c.minutes, 0), deduct: t.components.reduce((s, c) => s + c.deduct_days, 0) });
+const typeLabel = (t) => { const x = typeSums(t); return `${t.name} (${x.paid / 60}h, ${x.deduct}일)`; };
+const statusKo = { approved: '승인', pending: '승인 대기', rejected: '반려', cancelled: '취소' };
+const badge = (s) => ({ approved: 'ok', pending: 'wait', rejected: 'no' }[s] || '');
+const approverTitle = (id) => { const o = S.orgs.find((x) => x.head_id === id); return o ? `${o.head_title} · ${o.name}` : (person(id) ? orgOf(person(id).org_id)?.name ?? '' : ''); };
+const ATT_ACTION = { create: '생성', edit: '수정', delete: '삭제' };
+const reqTitle = (r) => (r.kind === 'attendance' ? `출퇴근기록 ${ATT_ACTION[r.action]}` : (typeOf(r.type_id)?.name ?? '휴가'));
+const reqWhen = (r) => (r.kind === 'attendance' ? md(r.work_date) : r.dates.map(md).join(', '));
+const geoOn = () => !!(S.settings.geofence && S.settings.geofence.enabled) && !S.exempt;
+
+/* ---------- 데이터 불러오기 ---------- */
+async function loadStatic() {
+  const uid = session.user.id;
+  const [prof, dir, orgs, groups, types, hol, sets, rules, ex] = await Promise.all([
+    rest('profiles', `select=*&id=eq.${uid}`), rest('directory', 'select=id,name,org_id,status'),
+    rest('org_units', 'select=id,name,parent_id,head_id,head_title,sort'), rest('leave_groups', 'select=id,name,sort&order=sort'),
+    rest('leave_types', 'select=*&active=eq.true&order=sort'), rest('holidays', 'select=holiday_date,name'),
+    rest('settings', 'select=key,value'), rest('work_rule_versions', 'select=*&order=effective_from.desc'),
+    rest('geo_exempt', `select=user_id&user_id=eq.${uid}`),
+  ]);
+  if (!prof.length) return false;
+  S.me = prof[0]; S.people = dir; S.orgs = orgs; S.groups = groups; S.types = types;
+  S.holidays = Object.fromEntries(hol.map((h) => [h.holiday_date, h.name]));
+  S.settings = Object.fromEntries(sets.map((x) => [x.key, x.value]));
+  const rule = rules.find((r) => r.effective_from <= S.today) || rules[0];
+  if (rule) S.policy = { breakMinutes: rule.break_minutes, leaveHoursPerDay: rule.daily_minutes / 60, weeklyHolidayDow: rule.weekly_holiday_dow };
+  S.exempt = ex.length > 0;
+  return true;
+}
+async function loadRange(from, to) {
+  const uid = session.user.id;
+  const [recs, lds] = await Promise.all([
+    rest('attendance_records', `select=work_date,clock_in,clock_out,source,in_distance_m,out_distance_m&user_id=eq.${uid}&work_date=gte.${from}&work_date=lte.${to}`),
+    rest('leave_days', `select=leave_date,minutes,deduct_days,type_id,request_id,leave_requests(status)&user_id=eq.${uid}&active=eq.true&leave_date=gte.${from}&leave_date=lte.${to}`),
+  ]);
+  for (let d = from; d <= to; d = addDays(d, 1)) { delete S.recs[d]; delete S.lv[d]; }
+  for (const r of recs) S.recs[r.work_date] = { date: r.work_date, clockIn: hmSeoul(r.clock_in), clockOut: hmSeoul(r.clock_out), source: r.source, inDist: r.in_distance_m, outDist: r.out_distance_m };
+  for (const l of lds) (S.lv[l.leave_date] = S.lv[l.leave_date] || []).push({ minutes: l.minutes, deduct: l.deduct_days, typeId: l.type_id, reqId: l.request_id, status: l.leave_requests ? l.leave_requests.status : 'pending' });
+  S.loaded.add(`${from}|${to}`);
+}
+async function ensureRange(from, to) { if (!S.loaded.has(`${from}|${to}`)) await loadRange(from, to); }
+const gridRange = (c) => { const first = `${c.y}-${p2(c.m)}-01`, last = `${c.y}-${p2(c.m)}-${p2(daysInMonth(c.y, c.m))}`; return [weekStartOf(first), addDays(weekStartOf(last), 6)]; };
+async function loadHomeData() {
+  const ws = weekStartOf(S.today);
+  const [a, b] = gridRange({ y: +S.today.slice(0, 4), m: +S.today.slice(5, 7) });
+  await ensureRange(a < ws ? a : ws, addDays(b, 0) > addDays(ws, 6) ? b : addDays(ws, 6));
+}
+async function loadRequests() {
+  const uid = session.user.id;
+  const [ml, ma, il, ia] = await Promise.all([
+    rest('leave_requests', `select=*&user_id=eq.${uid}&order=created_at.desc&limit=40`),
+    rest('attendance_requests', `select=*&user_id=eq.${uid}&order=created_at.desc&limit=40`),
+    rest('leave_requests', `select=*&approver_id=eq.${uid}&order=created_at.desc&limit=40`),
+    rest('attendance_requests', `select=*&approver_id=eq.${uid}&order=created_at.desc&limit=40`),
+  ]);
+  S.myLeave = ml.map((r) => ({ ...r, kind: 'leave' })); S.myAtt = ma.map((r) => ({ ...r, kind: 'attendance' }));
+  S.inboxLeave = il.map((r) => ({ ...r, kind: 'leave' })); S.inboxAtt = ia.map((r) => ({ ...r, kind: 'attendance' }));
+}
+async function loadLeave() {
+  const uid = session.user.id;
+  const [bal, grants, future] = await Promise.all([
+    rpc('leave_summary'),
+    rest('leave_grants', `select=kind,grant_date,days,expires_on,source&user_id=eq.${uid}&expires_on=gte.${S.today}&grant_date=lte.${S.today}`),
+    rest('leave_days', `select=leave_date&user_id=eq.${uid}&active=eq.true&leave_date=gte.${S.today}`),
+  ]);
+  S.bal = bal; S.grants = grants; S.takenFuture = new Set(future.map((x) => x.leave_date));
+}
+async function refreshAll() {
+  S.loaded = new Set();
+  await Promise.all([loadHomeData(), loadRequests(), loadLeave()]);
+}
+
+/* ---------- 화면 조각 ---------- */
+const header = (o) => `<header class="hdr">${o.back ? `<button class="ib" data-a="back" aria-label="뒤로">${ico('back')}</button>` : `<button class="ib menu-btn" data-a="drawer" aria-label="메뉴">${ico('menu')}</button>`}
+  ${o.logo ? '<div class="logo">근태·휴가</div><div class="ttl onlydesk">홈</div>' : `<div class="ttl">${esc(o.title)}</div>`}${o.right || ''}</header>`;
+const pendingCount = () => [...S.inboxLeave, ...S.inboxAtt].filter((r) => r.status === 'pending').length;
+const NAV = [['home', '홈', 'home'], ['requests', '요청', 'inbox'], ['schedule', '월 근무', 'cal'], ['records', '출퇴근기록', 'clock'], ['leave', '휴가', 'plane']];
+function tabbar() {
+  const n = pendingCount();
+  return `<nav class="tabbar" aria-label="하단 메뉴">${NAV.map(([k, l, i]) => `<button class="tab ${S.tab === k && !S.stack.length ? 'on' : ''}" data-a="tab" data-k="${k}">${ico(i)}<span>${l}</span>${k === 'requests' ? `<span class="badge ${n ? '' : 'gray'}">${n}</span>` : ''}</button>`).join('')}</nav>`;
+}
+function sidebar() {
+  const n = pendingCount();
+  return `<aside class="side" aria-label="메뉴"><div class="brand">근태·휴가</div><nav>${NAV.map(([k, l, i]) => `<button class="navbtn ${S.tab === k && !S.stack.length ? 'on' : ''}" data-a="tab" data-k="${k}">${ico(i)}<span>${l}</span>${k === 'requests' ? `<span class="badge ${n ? '' : 'gray'}">${n}</span>` : ''}</button>`).join('')}</nav>
+    <div class="sidefoot"><div class="who"><b>${esc(S.me.name)}</b><div class="muted small">${esc(orgOf(S.me.org_id)?.name ?? '소속 없음')}${S.me.role === 'admin' ? ' · 관리자' : ''}</div></div>
+    <button class="navbtn small" data-a="logout">로그아웃</button></div></aside>`;
+}
+const monthNav = (c, key) => `<div class="calhd"><button class="ib" data-a="mnav" data-k="${key}" data-n="-1" aria-label="이전 달">${ico('back')}</button><b>${c.m}월 ${c.y}</b><button class="ib" data-a="mnav" data-k="${key}" data-n="1" aria-label="다음 달">${ico('chev')}</button></div>`;
+const dowRow = () => `<div class="grid">${DOW.map((d, i) => `<div class="dw ${i === 0 ? 'sun' : ''}">${d}</div>`).join('')}</div>`;
+function gridDates(c) { const [a, b] = gridRange(c); const out = []; for (let d = a; d <= b; d = addDays(d, 1)) out.push(d); return out; }
+const leaveMin = (d, onlyApproved = true) => (S.lv[d] || []).filter((x) => !onlyApproved || x.status === 'approved').reduce((s, x) => s + (isWorkday(d) ? x.minutes : 0), 0);
+const recordDone = (r) => (r && r.clockIn && r.clockOut ? r : null);
+const spinner = '<div class="empty"><span class="spin"></span> 불러오는 중…</div>';
+
+/* ---------- 화면: 홈 ---------- */
+function homeScreen() {
+  const t = S.today, rec = S.recs[t], ws = weekStartOf(t), we = addDays(ws, 6);
+  const st = !rec ? ['출근 전', ''] : rec.clockOut ? ['퇴근 완료', 'ok'] : ['근무 중', 'live'];
+  let act = 0;
+  const tiles = [];
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(ws, i), r = S.recs[d], lv = (S.lv[d] || [])[0];
+    if (d <= t) act += dailyWorkMinutes(recordDone(r), S.policy) + leaveMin(d);
+    let inner;
+    if (r) inner = `<div>${r.clockIn}</div><div class="muted">${r.clockOut || '근무 중'}</div>`;
+    else if (lv) inner = `<div class="lv">${esc(typeOf(lv.typeId)?.name.split(' ')[0] ?? '휴가')}</div>`;
+    else if (isOffDay(d)) inner = '<div class="muted">휴일</div>';
+    else inner = '<div class="muted">-</div>';
+    tiles.push(`<div class="tile ${d === t ? 'today' : ''}"><div class="d ${i === 0 ? 'sun' : ''}">${d === t ? '오늘' : DOW[i]}</div>${inner}</div>`);
+  }
+  const pct = (m) => Math.min(100, (m / (52 * 60)) * 100);
+  const g = S.settings.geofence || {};
+  const geoNote = geoOn() ? `<div class="muted small" style="margin:-4px 0 10px">위치 확인: 근무지 반경 ${g.radius_m ?? 200}m 이내에서만 ${[g.apply_in !== false ? '출근' : '', g.apply_out !== false ? '퇴근' : ''].filter(Boolean).join('·')}할 수 있습니다.</div>` : '';
+  const dist = (n) => (n != null ? ` <span class="muted small">(${n}m)</span>` : '');
+  const btn = S.busy ? '<button class="btn primary" disabled><span class="spin"></span> 처리 중…</button>' : !rec ? '<button class="btn primary" data-a="clock">출근하기</button>' : !rec.clockOut ? '<button class="btn primary" data-a="clock">퇴근하기</button>' : '<button class="btn primary" disabled>퇴근 완료</button>';
+  return { header: header({ logo: true }), cls: 'grid2', body: `
+    <div class="card"><h2>오늘 근무</h2>
+      <div class="today-line"><div>${+t.slice(5, 7)}/${+t.slice(8, 10)} (${DOW[dayOfWeek(t)]})</div><div>${esc(orgOf(S.me.org_id)?.name ?? '')} <span class="chip ${st[1]}">${st[0]}</span></div></div>
+      <div class="btns"><button class="btn" data-a="sheet" data-k="request">요청</button>${btn}</div>${geoNote}
+      <hr style="border:0;border-top:1px solid var(--line)">
+      <div class="kv"><b>출근</b><span>${rec ? rec.clockIn : '-'}${dist(rec && rec.inDist)}</span></div>
+      <div class="kv"><b>퇴근</b><span>${rec && rec.clockOut ? rec.clockOut : '-'}${dist(rec && rec.outDist)}</span></div>
+      <div class="kv"><b>총 근로시간</b><span class="green">${recordDone(rec) ? hours(dailyWorkMinutes(rec, S.policy)) : '-'}</span></div></div>
+    <div class="card"><h3>이번주 근무</h3><div class="muted small">${md(ws)} - ${md(we)}</div>
+      <div class="week">${tiles.join('')}</div>
+      <div class="bar" role="img" aria-label="이번주 ${hours(act)}"><div class="act" style="width:${pct(act)}%"></div>
+        <div class="tick" style="left:${pct(40 * 60)}%"></div><div class="tick lim" style="left:100%"></div>
+        <div class="lbl" style="left:${pct(40 * 60)}%">40</div><div class="lbl" style="left:98%">52</div></div>
+      <div class="sumline" style="margin-top:30px">${hours(act)} <span>(휴가 포함)</span></div></div>` };
+}
+
+/* ---------- 화면: 월 근무 / 출퇴근기록 / 휴가 / 요청 ---------- */
+function scheduleScreen() {
+  const c = S.cal, dates = gridDates(c);
+  const evs = (d) => {
+    const out = [], lv = S.lv[d] || [], r = S.recs[d], seen = new Set();
+    for (const l of lv) { if (seen.has(l.reqId)) continue; seen.add(l.reqId); out.push(`<span class="ev" style="background:${l.status === 'pending' ? '#8a8f99' : '#168a3a'}">✈ ${esc((typeOf(l.typeId)?.name || '휴가').split(' ')[0])}</span>`); }
+    if (r) out.push(`<span class="ev" style="background:${palette[hash(r.clockIn || '') % palette.length]}"><span class="evfull">${r.clockIn}-${r.clockOut || '…'}</span><span class="evshort">${+r.clockIn.slice(0, 2)}:${r.clockIn.slice(3)}</span></span>`);
+    return out.join('');
+  };
+  const cells = dates.map((d) => `<div class="mcell"><span class="n ${d === S.today ? 'today' : ''} ${+d.slice(5, 7) !== c.m ? 'oth' : ''} ${dayOfWeek(d) === 0 || isHoliday(d) ? 'sun' : ''}">${+d.slice(8, 10)}</span>${evs(d)}</div>`).join('');
+  const list = dates.map((d) => {
+    const r = S.recs[d], lv = S.lv[d] || [];
+    if (!r && !lv.length) return '';
+    const seen = new Set();
+    return `<div class="dh ${dayOfWeek(d) === 0 ? 'sun' : ''}">${+d.slice(5, 7)}월 ${+d.slice(8, 10)}일, ${DOW[dayOfWeek(d)]}${isHoliday(d) ? ` · ${esc(S.holidays[d])}` : ''}</div>` +
+      lv.filter((l) => !seen.has(l.reqId) && seen.add(l.reqId)).map((l) => `<div class="it"><div class="ico">${ico('plane')}</div><div><b>${esc(typeOf(l.typeId)?.name ?? '휴가')}</b><div class="muted small">${statusKo[l.status] ?? ''}</div></div></div>`).join('') +
+      (r ? `<div class="it"><div class="ico">${ico('clock')}</div><div><b>${r.clockIn} - ${r.clockOut || '근무 중'}</b><div class="muted small">${recordDone(r) ? `실근로 ${hours(dailyWorkMinutes(r, S.policy))}` : '퇴근 전'}</div></div></div>` : '');
+  }).join('');
+  return { header: header({ title: '월 근무' }), cls: '', body: `<div class="bleed"><div class="split"><div class="split-a">${monthNav(c, 'cal')}<div style="background:var(--card)">${dowRow()}<div class="grid">${cells}</div></div></div><div class="daylist split-b">${list || '<div class="empty">이 달의 기록이 없습니다.</div>'}</div></div></div>` };
+}
+function monthSummary(y, m) {
+  const records = [], leaves = [];
+  for (let d = 1; d <= daysInMonth(y, m); d++) {
+    const date = `${y}-${p2(m)}-${p2(d)}`, r = recordDone(S.recs[date]);
+    if (r) records.push({ date, clockIn: r.clockIn, clockOut: r.clockOut });
+    for (const l of S.lv[date] || []) if (l.status === 'approved') leaves.push({ date, minutes: l.minutes });
+  }
+  const hol = Object.keys(S.holidays);
+  const s = summarizeMonth({ year: y, month: m, records, leaves, holidays: hol, policy: S.policy });
+  const sch = scheduledMinutes({ year: y, month: m, holidays: hol, dailyMinutes: S.policy.leaveHoursPerDay * 60 });
+  return { ...s, scheduled: sch.minutes, scheduledDays: sch.days };
+}
+function recordsScreen() {
+  const c = S.rec, s = monthSummary(c.y, c.m), rows = [];
+  for (let d = 1; d <= daysInMonth(c.y, c.m); d++) {
+    const date = `${c.y}-${p2(c.m)}-${p2(d)}`, r = S.recs[date], lv = leaveMin(date, false);
+    if (!r && !lv) continue;
+    const w = recordDone(r) ? dailyWorkMinutes(r, S.policy) : 0;
+    rows.push(`<div class="kv" style="padding:10px 16px;border-top:1px solid var(--line)"><span class="${isOffDay(date) ? 'sun' : ''}">${md(date)} (${DOW[dayOfWeek(date)]})${isOffDay(date) && w ? ' <span class="chip wait">휴일근로</span>' : ''}${r && r.source === 'correction' ? ' <span class="chip live">정정</span>' : ''}</span>
+      <span>${r ? `${r.clockIn} - ${r.clockOut ?? '근무 중'}` : ''}${lv ? ` <span class="chip live">휴가 ${hours(lv)}</span>` : ''} <b class="green">${w ? hours(w) : ''}</b></span></div>`);
+  }
+  return { header: header({ title: '출퇴근기록' }), cls: 'grid2', body: `<div class="bleed span2">${monthNav(c, 'rec')}</div>
+    <div class="card"><h3>${c.m}월 근태 집계</h3>
+      <div class="kv"><b>평일 합계 (실근로 + 휴가 환산)</b><span class="green"><b>${hours(s.weekdayMinutes)}</b></span></div>
+      <div class="kv"><b>└ 실근로</b><span>${hours(s.workMinutes)}</span></div>
+      <div class="kv"><b>└ 휴가 환산 (승인된 휴가)</b><span>${hours(s.leaveMinutes)}</span></div>
+      <div class="kv"><b>휴일근로 (별도 집계)</b><span>${hours(s.holidayWorkMinutes)}</span></div>
+      <div class="kv"><b>월 소정근로시간</b><span>${hours(s.scheduled)} (${s.scheduledDays}일)</span></div>
+      <div class="muted small">휴게 ${S.policy.breakMinutes}분 고정 공제 · 휴가는 하루 ${S.policy.leaveHoursPerDay}시간 기준</div>
+      <div class="btns"><button class="btn block" data-a="attNew" data-k="edit">출퇴근기록 정정 요청</button></div></div>
+    <div class="card flush">${rows.join('') || '<div class="empty">기록이 없습니다.</div>'}</div>` };
+}
+function leaveScreen() {
+  if (!S.bal) return { header: header({ title: '휴가' }), cls: 'grid2', body: spinner };
+  const b = S.bal, granted = S.grants.reduce((s, g) => s + Number(g.days), 0);
+  const mine = S.myLeave.slice(0, 15);
+  return { header: header({ title: '휴가' }), cls: 'grid2', body: `<div class="card">
+    <div class="muted small">연차휴가 ${b.period_start ? `(${b.period_start.replaceAll('-', '.')} - ${b.period_end.replaceAll('-', '.')})` : ''}</div>
+    <div class="big" style="margin:6px 0">${Number(b.remaining)}일 <span class="muted" style="font-size:16px;font-weight:500">남음</span></div>
+    <div class="muted small">부여 ${granted}일 · 사용(승인 대기 포함) ${Math.round((granted - Number(b.remaining)) * 100) / 100}일</div>
+    ${b.period_end ? '' : '<div class="muted small" style="margin-top:8px;color:var(--red)">발생한 연차가 없습니다. 관리자에게 문의해 주세요.</div>'}
+    <div class="btns"><button class="btn primary" data-a="leaveNew">휴가 신청</button></div></div>
+    <div class="card flush"><div style="padding:14px 16px;font-weight:700">내 휴가 내역</div>${mine.map((r) => `<button class="rowbtn" style="font-weight:500;border-top:1px solid var(--line)" data-a="req" data-k="leave" data-id="${r.id}"><div><div>${esc(reqTitle(r))}</div><div class="muted small">${reqWhen(r)}</div></div><span class="chip ${badge(r.status)}" style="margin-left:auto">${statusKo[r.status]}</span></button>`).join('') || '<div class="empty">내역이 없습니다.</div>'}</div>` };
+}
+function requestsScreen() {
+  const all = (a, b) => [...a, ...b].sort((x, y) => y.created_at.localeCompare(x.created_at));
+  const list = S.seg === 'inbox' ? all(S.inboxLeave, S.inboxAtt).sort((a, b) => (b.status === 'pending') - (a.status === 'pending')) : all(S.myLeave, S.myAtt);
+  const n = pendingCount();
+  return { header: header({ title: '요청' }), cls: 'narrow', body: `<div class="seg"><button class="${S.seg === 'mine' ? 'on' : ''}" data-a="seg" data-k="mine">내 요청</button><button class="${S.seg === 'inbox' ? 'on' : ''}" data-a="seg" data-k="inbox">승인 대기 ${n}</button></div>
+    <div class="card flush">${list.map((r) => `<button class="rowbtn" style="font-weight:500;border-top:1px solid var(--line)" data-a="req" data-k="${r.kind}" data-id="${r.id}"><div><div>${S.seg === 'inbox' ? `<b>${esc(person(r.user_id)?.name ?? '')}</b> · ` : ''}${esc(reqTitle(r))}</div><div class="muted small">${reqWhen(r)} · 승인권자 ${esc(person(r.approver_id)?.name ?? '')}</div></div><span class="chip ${badge(r.status)}" style="margin-left:auto">${statusKo[r.status]}</span></button>`).join('') || '<div class="empty">요청이 없습니다.</div>'}</div>` };
+}
+function requestDetail(p) {
+  const r = [...S.myLeave, ...S.myAtt, ...S.inboxLeave, ...S.inboxAtt].find((x) => x.id === p.id && x.kind === p.kind);
+  if (!r) return { header: header({ back: true, title: '요청 상세' }), cls: 'narrow', body: '<div class="empty">요청을 찾을 수 없습니다.</div>' };
+  const mineReq = r.user_id === S.me.id, canDecide = r.status === 'pending' && r.approver_id === S.me.id && !mineReq;
+  const rec = (a, b) => (a ? `${hmSeoul(a)} - ${hmSeoul(b) ?? '근무 중'}` : '기록 없음');
+  const rows = r.kind === 'attendance'
+    ? `<div class="kv"><b>날짜</b><span>${md(r.work_date)} (${DOW[dayOfWeek(r.work_date)]})</span></div>
+       <div class="kv"><b>변경 전</b><span>${r.before ? rec(r.before.clock_in, r.before.clock_out) : '기록 없음'}</span></div>
+       <div class="kv"><b>변경 후</b><span>${r.action === 'delete' ? '기록 삭제' : rec(r.clock_in, r.clock_out)}</span></div>`
+    : `<div class="kv"><b>날짜</b><span style="text-align:right">${r.dates.map((d) => `${md(d)} (${DOW[dayOfWeek(d)]})`).join('<br>')}</span></div>`;
+  return { header: header({ back: true, title: '요청 상세' }), cls: 'narrow', body: `<div class="card"><span class="chip ${badge(r.status)}">${statusKo[r.status]}</span>
+    <h2 style="margin-top:10px">${esc(reqTitle(r))}</h2>
+    <div class="kv"><b>신청자</b><span>${esc(person(r.user_id)?.name ?? '')}</span></div>${rows}
+    <div class="kv"><b>승인권자</b><span>${esc(person(r.approver_id)?.name ?? '')}</span></div>
+    <div class="kv"><b>사유</b><span style="text-align:right;max-width:60%">${esc(r.reason)}</span></div>
+    ${r.comment ? `<div class="kv"><b>의견</b><span>${esc(r.comment)}</span></div>` : ''}
+    ${canDecide ? `<div class="btns"><button class="btn danger" data-a="decide" data-k="${r.kind}" data-id="${r.id}" data-v="rejected">반려</button><button class="btn primary" data-a="decide" data-k="${r.kind}" data-id="${r.id}" data-v="approved">승인</button></div>` : ''}
+    ${mineReq && r.status === 'pending' ? `<div class="btns"><button class="btn danger block" data-a="cancel" data-k="${r.kind}" data-id="${r.id}">요청 취소</button></div>` : ''}</div>` };
+}
+
+/* ---------- 화면: 휴가 신청 ---------- */
+function leaveStep1() {
+  const d = S.draft, t = typeOf(d.typeId);
+  if (!t) return { header: header({ back: true, title: '휴가 생성 요청' }), cls: 'narrow', body: '<div class="empty">사용할 수 있는 휴가 유형이 없습니다. 관리자에게 문의해 주세요.</div>' };
+  const sums = typeSums(t), pend = t.deduct_from === 'annual' ? (S.bal && S.bal.period_end) : null;
+  const cells = gridDates(d.cal).map((date) => {
+    const other = +date.slice(5, 7) !== d.cal.m, past = date < S.today, has = S.takenFuture.has(date);
+    const okDay = t.allow_non_workdays ? true : isWorkday(date);
+    const dis = other || past || has || !okDay || (t.deduct_from === 'annual' && (!pend || date > pend));
+    const sel = d.dates.includes(date);
+    const cls = ['cell', other ? 'other' : '', date === S.today ? 'today' : '', sel ? 'sel' : '', has ? 'dis' : '', (dayOfWeek(date) === 0 || isHoliday(date)) ? 'off' : '', past && !other ? 'past' : ''].join(' ');
+    return `<button class="${cls}" ${dis ? 'disabled' : ''} data-a="pickDate" data-d="${date}" aria-label="${date}${has ? ' (이미 휴가 있음)' : ''}">${+date.slice(8, 10)}</button>`;
+  }).join('');
+  let msg = '', blocked = false;
+  if (t.deduct_from === 'annual') {
+    const rem = S.bal ? Number(S.bal.remaining) : 0, after = rem - sums.deduct * d.dates.length;
+    msg = `연차휴가 잔여 일수는 ${rem}${d.dates.length ? ` → ${after}` : ''}일입니다.`;
+    if (!S.bal || !S.bal.period_end) { msg = '발생한 연차가 없습니다. 관리자에게 문의해 주세요.'; blocked = true; }
+    else if (after < 0) { msg += ' 잔여 연차가 부족합니다.'; blocked = true; }
+  } else if (t.deduct_from === 'quota') msg = `${esc(t.name)}은(는) 연 ${t.quota_days}일 한도예요. 한도 확인은 신청할 때 합니다.`;
+  else msg = '연차가 차감되지 않는 휴가입니다.';
+  return { header: header({ back: true, title: '휴가 생성 요청', right: `<button class="btn" style="border:0;color:var(--primary);height:44px" data-a="step2" ${d.dates.length && !blocked ? '' : 'disabled'}>다음</button>` }), cls: 'narrow', body: `<div class="bleed"><button class="pick" data-a="sheet" data-k="type"><b>휴가 유형</b><span class="v">${esc(typeLabel(t))} ›</span></button>
+    <div style="background:var(--card);margin-top:12px">${monthNav(d.cal, 'draft')}${dowRow()}<div class="grid">${cells}</div></div>
+    <div class="foot" role="status">${msg}</div>${t.max_days ? `<div class="foot muted small">최대 ${t.max_days}일까지 선택할 수 있습니다.</div>` : ''}</div>` };
+}
+function leaveStep2() {
+  const d = S.draft, t = typeOf(d.typeId), ap = d.approverId ? person(d.approverId) : null, sums = typeSums(t);
+  const ok = d.reason.trim() && d.approverId;
+  const n = (S.settings.notice && S.settings.notice.leave_request) || '';
+  return { header: header({ back: true, title: '검토: 휴가 생성', right: `<button id="sendBtn" class="btn" style="border:0;color:var(--primary);height:44px" data-a="send" ${ok && !S.busy ? '' : 'disabled'}>보내기</button>` }), cls: 'narrow', body: `<div class="bleed">
+    ${n ? `<div class="notice">${ico('bell')}<span>${esc(n)}</span></div>` : ''}
+    <button class="pick ${ap ? '' : 'need'}" style="margin-top:12px" data-a="sheet" data-k="approver"><b>승인권자 <span class="chip live">${ap ? 1 : 0} / 1</span></b><span class="v">${ap ? esc(ap.name) : '선택해 주세요'} ›</span></button>
+    ${ap ? `<div class="muted small" style="padding:6px 16px">${esc(approverTitle(ap.id))}</div>` : ''}
+    <div class="field"><label for="reason">사유 (필수)</label><textarea id="reason" data-i="reason" placeholder="요청 사유 입력">${esc(d.reason)}</textarea></div>
+    <div class="field"><label>요청사항</label>
+      <div class="kv"><b>휴가 유형</b><span style="text-align:right">${esc(t.name)}<br><span class="muted small">(${sums.paid / 60}시간, ${sums.deduct}일간)</span></span></div>
+      <div class="kv"><b>휴가 날짜</b><span style="text-align:right">${d.dates.map((x) => `${+x.slice(5, 7)}월 ${+x.slice(8, 10)}일 (${DOW[dayOfWeek(x)]})`).join('<br>')}</span></div></div>
+    ${d.approvers && !d.approvers.length ? '<div class="foot" style="color:var(--red)">선택할 수 있는 승인권자가 없습니다. 관리자에게 조직·승인 설정을 확인해 달라고 요청하세요.</div>' : ''}</div>` };
+}
+function attCheck(d) {
+  if (!d.date) return '날짜를 선택해 주세요.';
+  if (d.date > S.today) return '오늘 이후 날짜는 요청할 수 없습니다.';
+  if (d.date < addDays(S.today, -60)) return '최근 60일 안의 날짜만 요청할 수 있습니다.';
+  if (d.action !== 'delete') {
+    if (!d.clockIn || !d.clockOut) return '출근·퇴근 시각을 입력해 주세요.';
+    if (toMinutes(d.clockOut) <= toMinutes(d.clockIn)) return '퇴근 시각이 출근 시각보다 늦어야 합니다. (자정을 넘기는 근무는 아직 지원하지 않습니다)';
+  }
+  return '';
+}
+const attOk = () => { const d = S.adraft; return !attCheck(d) && d.reason.trim() && d.approverId; };
+function attForm() {
+  const d = S.adraft, cur = S.recs[d.date], err = attCheck(d), ap = d.approverId ? person(d.approverId) : null;
+  const wm = (r) => (r && r.clockIn && r.clockOut && toMinutes(r.clockOut) > toMinutes(r.clockIn) ? dailyWorkMinutes(r, S.policy) : null);
+  const before = wm(cur), after = d.action === 'delete' ? 0 : wm(d);
+  const acts = [['edit', '수정'], ['create', '생성'], ['delete', '삭제']];
+  return { header: header({ back: true, title: '출퇴근기록 정정 요청', right: `<button id="sendBtnA" class="btn" style="border:0;color:var(--primary);height:44px" data-a="sendAtt" ${attOk() && !S.busy ? '' : 'disabled'}>보내기</button>` }), cls: 'narrow', body: `<div class="bleed">
+    <div class="seg" style="margin:12px">${acts.map(([k, l]) => `<button class="${d.action === k ? 'on' : ''}" data-a="attAction" data-k="${k}">${l}</button>`).join('')}</div>
+    <div class="field"><label for="ad">날짜</label><input id="ad" type="date" min="${addDays(S.today, -60)}" max="${S.today}" value="${d.date}" data-c="ad" data-f="date">
+      <div class="muted small" style="margin-top:8px">현재 기록: ${cur ? `${cur.clockIn} - ${cur.clockOut ?? '근무 중'}` : '없음'}</div></div>
+    ${d.action === 'delete' ? '' : `<div class="field"><div class="pair"><label class="small muted">출근 시각<input type="time" value="${d.clockIn}" data-c="ad" data-f="clockIn"></label><label class="small muted">퇴근 시각<input type="time" value="${d.clockOut}" data-c="ad" data-f="clockOut"></label></div></div>`}
+    ${err ? `<div class="foot" style="color:var(--red)" role="alert">${esc(err)}</div>` : `<div class="foot" role="status">실근로: ${before == null ? '-' : hours(before)} → ${after == null ? '-' : hours(after)} (휴게 ${S.policy.breakMinutes}분 공제)</div>`}
+    <div class="field"><label for="areason">사유 (필수)</label><textarea id="areason" data-i="areason" placeholder="예: 퇴근 기록을 깜빡했습니다">${esc(d.reason)}</textarea></div>
+    <button class="pick ${ap ? '' : 'need'}" style="margin-top:10px" data-a="sheet" data-k="approverA"><b>승인권자 <span class="chip live">${ap ? 1 : 0} / 1</span></b><span class="v">${ap ? esc(ap.name) : '선택해 주세요'} ›</span></button>
+    ${ap ? `<div class="muted small" style="padding:6px 16px">${esc(approverTitle(ap.id))}</div>` : ''}</div>` };
+}
+
+const TABS = { home: homeScreen, schedule: scheduleScreen, records: recordsScreen, leave: leaveScreen, requests: requestsScreen };
+const PAGES = { leave1: leaveStep1, leave2: leaveStep2, att: attForm, req: requestDetail };
+
+/* ---------- 시트 ---------- */
+function geoMessage(res) {
+  const g = res || {};
+  if (g.code === 'too_far') return `${g.site_name}에서 ${g.distance}m 떨어져 있습니다. ${g.radius}m 이내에서만 가능합니다.`;
+  if (g.code === 'low_accuracy') return `위치 정확도가 낮습니다 (오차 ${g.accuracy}m). 실외나 창가에서 다시 시도해 주세요.`;
+  if (g.code === 'no_site') return '등록된 근무지가 없습니다. 관리자에게 문의해 주세요.';
+  if (g.code === 'denied') return '위치 권한이 거부되어 있습니다. 브라우저 설정에서 이 사이트의 위치를 허용해 주세요.';
+  if (g.code === 'unavailable') return '현재 위치를 가져오지 못했습니다. 잠시 후 다시 시도해 주세요.';
+  if (g.code === 'unsupported') return '이 기기에서는 위치 확인을 지원하지 않습니다.';
+  return '위치를 확인할 수 없습니다.';
+}
+function renderSheet() {
+  const sh = S.sheet;
+  if (!sh) return '';
+  const wrap = (inner) => `<div class="sheetbg" data-a="closeSheet"><div class="sheet" role="dialog" aria-modal="true" data-stop="1">${inner}</div></div>`;
+  if (sh.k === 'request') {
+    const items = [['출퇴근기록 생성', 'attNew', 'create'], ['출퇴근기록 수정', 'attNew', 'edit'], ['출퇴근기록 삭제', 'attNew', 'delete'], ['휴가 생성', 'leaveNew', '']];
+    return wrap(`<div class="sh">요청 종류를 선택하세요.</div>${items.map(([l, a, k]) => `<button class="si" data-a="${a}" data-k="${k}">${l}</button>`).join('')}<button class="si" data-a="closeSheet">취소</button>`);
+  }
+  if (sh.k === 'type') {
+    const d = S.draft;
+    return wrap(S.groups.map((g, gi) => { const ts = S.types.filter((t) => t.group_id === g.id); return ts.length ? `<div class="grp">${gi + 1}. ${esc(g.name)}</div>${ts.map((t) => `<button class="si ${t.id === d.typeId ? 'on' : ''}" data-a="setType" data-id="${t.id}"><span>${esc(typeLabel(t))}</span><span>${t.id === d.typeId ? '✓' : ''}</span></button>`).join('')}` : ''; }).join(''));
+  }
+  if (sh.k === 'approver' || sh.k === 'approverA') {
+    const a = sh.k === 'approver' ? S.draft : S.adraft, list = a.approvers;
+    return wrap(`<div class="sh">승인권자를 선택하세요.</div>${!list ? spinner : list.map((c) => `<button class="si ${a.approverId === c.approver_id ? 'on' : ''}" data-a="setApprover" data-w="${sh.k}" data-id="${c.approver_id}"><span>${esc(c.name)}<div class="muted small">${esc(c.head_title ? `${c.head_title} · ${c.org_name}` : '')}</div></span><span>${a.approverId === c.approver_id ? '✓' : ''}</span></button>`).join('') || '<div class="empty">후보가 없습니다. 관리자에게 문의해 주세요.</div>'}`);
+  }
+  if (sh.k === 'geoFail') {
+    return wrap(`<div class="sh" style="color:var(--red);font-weight:700">${sh.action === 'in' ? '출근' : '퇴근'}할 수 없습니다</div><div style="padding:0 20px 12px">${esc(geoMessage(sh.res))}</div>
+      <button class="si" data-a="clock">다시 시도</button><button class="si" data-a="attFromGeo" data-k="${sh.action}">출퇴근 누락·수정 요청 보내기</button><button class="si" data-a="closeSheet">닫기</button>`);
+  }
+  if (sh.k === 'drawer') {
+    return `<div class="sheetbg" style="justify-content:flex-start;align-items:stretch" data-a="closeSheet"><div class="drawer" role="dialog" aria-modal="true" data-stop="1">
+      <div style="padding:0 20px 14px"><b style="font-size:18px">${esc(S.me.name)}</b><div class="muted small">${esc(orgOf(S.me.org_id)?.name ?? '소속 없음')}${S.me.role === 'admin' ? ' · 관리자' : ''}</div></div>
+      <button class="si" data-a="reload">새로고침</button><button class="si" data-a="logout">로그아웃</button><button class="si" data-a="closeSheet">닫기</button></div></div>`;
+  }
+  return '';
+}
+
+/* ---------- 로그인 화면 ---------- */
+function authScreen() {
+  if (S.view === 'boot') return `<div class="login"><div class="empty">${spinner}</div></div>`;
+  if (S.view === 'noprofile') return `<div class="login"><h1>직원 등록이 필요합니다</h1><div class="card"><p>로그인은 되었지만 직원 정보가 등록되어 있지 않습니다. 관리자에게 이 계정을 직원으로 등록해 달라고 요청해 주세요.</p><div class="muted small">계정: ${esc(session && session.user ? session.user.email : '')}</div><div class="btns"><button class="btn block" data-a="logout">다른 계정으로 로그인</button></div></div></div>`;
+  return `<div class="login"><h1>근태·휴가</h1><div class="muted">회사에서 안내받은 계정으로 로그인하세요.</div>
+    <div class="card" style="margin-top:20px"><label for="em" style="margin-top:0">이메일</label><input id="em" type="email" inputmode="email" autocomplete="username" autocapitalize="none" spellcheck="false" value="${esc(S.lastEmail || '')}">
+      <label for="pw">비밀번호</label><input id="pw" type="password" autocomplete="current-password">
+      ${S.authError ? `<div class="err" role="alert">${esc(S.authError)}</div>` : ''}
+      <div class="btns"><button class="btn primary" data-a="login" ${S.busy ? 'disabled' : ''}>${S.busy ? '로그인 중…' : '로그인'}</button></div></div></div>`;
+}
+
+/* ---------- 렌더 ---------- */
+function render() {
+  if (!['main'].includes(S.view)) { $('app').innerHTML = authScreen(); $('sheet').innerHTML = ''; $('toast').innerHTML = S.toast ? `<div class="toast" role="status">${esc(S.toast)}</div>` : ''; return; }
+  const top = S.stack[S.stack.length - 1];
+  const scr = top ? PAGES[top.name](top) : TABS[S.tab]();
+  const err = S.loadError ? `<div class="card" style="color:var(--red)" role="alert">${esc(S.loadError)} <button class="btn" data-a="reload" style="height:36px">다시 시도</button></div>` : '';
+  $('app').innerHTML = `<div class="app"><div class="shell">${sidebar()}<div class="content">${scr.header}<main class="main ${scr.cls || ''}">${err}${scr.body}</main></div></div>${tabbar()}</div>`;
+  $('sheet').innerHTML = renderSheet();
+  $('toast').innerHTML = S.toast ? `<div class="toast" role="status">${esc(S.toast)}</div>` : '';
+}
+let toastTimer;
+function toast(msg) { S.toast = msg; render(); clearTimeout(toastTimer); toastTimer = setTimeout(() => { S.toast = ''; render(); }, 3200); }
+const push = (name, extra = {}) => { S.stack.push({ name, ...extra }); S.sheet = null; render(); window.scrollTo && window.scrollTo(0, 0); };
+const closeSheet = () => { S.sheet = null; render(); };
+async function guard(fn) {
+  try { return await fn(); }
+  catch (e) {
+    if (e instanceof ApiError && e.status === 401) { await doLogout(true); return undefined; }
+    if (e instanceof TypeError) e.status = 0;
+    S.busy = false; toast(errText(e)); return undefined;
+  }
+}
+const getPos = () => new Promise((resolve) => {
+  if (typeof navigator === 'undefined' || !navigator.geolocation) return resolve({ error: 'unsupported' });
+  navigator.geolocation.getCurrentPosition((q) => resolve({ lat: q.coords.latitude, lng: q.coords.longitude, accuracy: q.coords.accuracy }),
+    (e) => resolve({ error: e.code === 1 ? 'denied' : 'unavailable' }), { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+});
+
+/* ---------- 로그인 / 로그아웃 / 시작 ---------- */
+async function bootMain() {
+  S.view = 'boot'; render();
+  try {
+    S.today = seoulToday();
+    const ok = await loadStatic();
+    if (!ok) { S.view = 'noprofile'; render(); return; }
+    S.view = 'main'; S.loadError = ''; render();
+    await Promise.all([loadHomeData(), loadRequests(), loadLeave()]);
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 401) { await doLogout(true); return; }
+    S.view = S.me ? 'main' : 'login';
+    if (S.view === 'main') S.loadError = `일부 데이터를 불러오지 못했습니다. ${errText(e)}`; else S.authError = `데이터를 불러오지 못했습니다. ${errText(e)}`;
+  }
+  render();
+}
+async function doLogout(expired) {
+  try { if (session && !expired) await fetch(CFG.url + '/auth/v1/logout', { method: 'POST', headers: { apikey: CFG.key, Authorization: `Bearer ${session.access_token}` } }); } catch (e) { /* 무시 */ }
+  session = null; store.set(null);
+  Object.assign(S, { me: null, view: 'login', stack: [], sheet: null, tab: 'home', recs: {}, lv: {}, bal: null, myLeave: [], myAtt: [], inboxLeave: [], inboxAtt: [], loaded: new Set(), draft: null, adraft: null, authError: expired ? '로그인 시간이 지났습니다. 다시 로그인해 주세요.' : '' });
+  render();
+}
+
+/* ---------- 동작 ---------- */
+const A = {
+  login: async () => {
+    const em = $('em').value.trim(), pw = $('pw').value; S.lastEmail = em;
+    if (!em || !pw) { S.authError = '이메일과 비밀번호를 입력해 주세요.'; render(); return; }
+    S.busy = true; S.authError = ''; render();
+    try { saveSession(await authCall('/auth/v1/token?grant_type=password', { email: em, password: pw })); S.busy = false; await bootMain(); }
+    catch (e) {
+      S.busy = false;
+      S.authError = e instanceof ApiError ? (e.status === 400 || e.status === 401 || e.status === 422 ? '이메일 또는 비밀번호가 맞지 않습니다.' : errText(e)) : '네트워크에 연결할 수 없습니다.';
+      render();
+    }
+  },
+  logout: () => doLogout(false),
+  reload: () => guard(async () => { S.sheet = null; S.loadError = ''; await refreshAll(); render(); }),
+  tab: (e) => guard(async () => { S.tab = e.k; S.stack = []; S.sheet = null; render(); window.scrollTo && window.scrollTo(0, 0); await tabLoad(); }),
+  back: () => { S.stack.pop(); render(); },
+  drawer: () => { S.sheet = { k: 'drawer' }; render(); },
+  sheet: (e) => guard(async () => {
+    S.sheet = { k: e.k }; render();
+    if (e.k === 'approver' || e.k === 'approverA') {
+      const d = e.k === 'approver' ? S.draft : S.adraft;
+      if (!d.approvers) { d.approvers = await rpc('my_approver_candidates', e.k === 'approver' ? { p_leave_type: d.typeId } : {}); render(); }
+    }
+  }),
+  closeSheet,
+  seg: (e) => { S.seg = e.k; render(); },
+  mnav: (e) => guard(async () => {
+    const key = e.k, n = +e.n;
+    if (key === 'draft') { S.draft.cal = shiftMonth(S.draft.cal, n); render(); return; }
+    S[key] = shiftMonth(S[key], n);
+    const [a, b] = gridRange(S[key]); render(); await ensureRange(a, b); render();
+  }),
+  clock: () => guard(async () => {
+    if (S.busy) return;
+    const rec = S.recs[S.today], action = !rec ? 'in' : 'out';
+    if (rec && rec.clockOut) return;
+    const g = S.settings.geofence || {}, need = geoOn() && (action === 'in' ? g.apply_in !== false : g.apply_out !== false);
+    S.sheet = null; S.busy = true; render();
+    let pos = { lat: null, lng: null, accuracy: null };
+    if (need) {
+      toast('위치를 확인하는 중…');
+      pos = await getPos();
+      if (pos.error) { S.busy = false; S.toast = ''; S.sheet = { k: 'geoFail', action, res: { code: pos.error } }; render(); return; }
+    }
+    const res = await rpc(action === 'in' ? 'clock_in' : 'clock_out', { p_lat: pos.lat, p_lng: pos.lng, p_accuracy: pos.accuracy });
+    S.busy = false; S.toast = '';
+    if (!res.ok) { S.sheet = { k: 'geoFail', action, res: res.geo }; render(); return; }
+    await loadRange(S.today, S.today); S.loaded = new Set(); render();
+    toast(action === 'in' ? '출근했습니다.' : '퇴근했습니다.');
+  }),
+  leaveNew: () => guard(async () => {
+    S.sheet = null; if (!S.bal) await loadLeave();
+    const t = S.types.find((x) => x.deduct_from === 'annual') || S.types[0];
+    S.draft = { typeId: t ? t.id : null, dates: [], cal: { ...S.cal }, reason: '', approverId: null, approvers: null };
+    S.stack = [{ name: 'leave1' }]; render();
+  }),
+  setType: (e) => { S.draft.typeId = e.id; S.draft.dates = []; S.draft.approverId = null; S.draft.approvers = null; closeSheet(); },
+  pickDate: (e) => {
+    const d = S.draft, t = typeOf(d.typeId), i = d.dates.indexOf(e.d);
+    if (i >= 0) d.dates.splice(i, 1);
+    else if (t.max_days && d.dates.length >= t.max_days) return toast(`이 유형은 최대 ${t.max_days}일까지 선택할 수 있습니다.`);
+    else d.dates.push(e.d);
+    d.dates.sort(); render();
+  },
+  step2: () => push('leave2'),
+  setApprover: (e) => { const d = e.w === 'approver' ? S.draft : S.adraft; d.approverId = e.id; closeSheet(); },
+  send: () => guard(async () => {
+    const d = S.draft; if (S.busy || !d.reason.trim() || !d.approverId) return;
+    S.busy = true; render();
+    await rpc('submit_leave_request', { p_type: d.typeId, p_dates: d.dates, p_reason: d.reason.trim(), p_approver: d.approverId });
+    const to = person(d.approverId)?.name ?? ''; S.busy = false; S.draft = null; S.stack = []; S.tab = 'requests'; S.seg = 'mine';
+    await refreshAll(); render(); toast(`요청을 보냈습니다. 승인권자: ${to}`);
+  }),
+  attNew: (e) => guard(async () => {
+    S.sheet = null; const action = e.k || 'edit';
+    let date = S.today;
+    if (action === 'create') for (let d = addDays(S.today, -1), i = 0; i < 40; d = addDays(d, -1), i++) if (isWorkday(d) && !S.recs[d] && leaveMin(d, false) < 480) { date = d; break; }
+    const cur = S.recs[date];
+    S.adraft = { action, date, clockIn: cur ? cur.clockIn : '09:00', clockOut: cur && cur.clockOut ? cur.clockOut : '18:00', reason: '', approverId: null, approvers: null };
+    S.stack = [{ name: 'att' }]; render();
+  }),
+  attFromGeo: (e) => {
+    const rec = S.recs[S.today];
+    S.adraft = { action: rec ? 'edit' : 'create', date: S.today, clockIn: rec ? rec.clockIn : '', clockOut: rec && rec.clockOut ? rec.clockOut : '', reason: '', approverId: null, approvers: null };
+    const now = hmSeoul(new Date().toISOString());
+    if (!rec && e.k === 'in') S.adraft.clockIn = now; if (rec && e.k === 'out') S.adraft.clockOut = now;
+    S.stack = [{ name: 'att' }]; S.sheet = null; render();
+  },
+  attAction: (e) => { const d = S.adraft, cur = S.recs[d.date]; d.action = e.k; if (cur && e.k !== 'create') { d.clockIn = cur.clockIn; d.clockOut = cur.clockOut || d.clockOut; } render(); },
+  sendAtt: () => guard(async () => {
+    const d = S.adraft; if (S.busy || !attOk()) return;
+    S.busy = true; render();
+    await rpc('submit_attendance_request', { p_action: d.action, p_date: d.date, p_in: d.action === 'delete' ? null : d.clockIn, p_out: d.action === 'delete' ? null : d.clockOut, p_reason: d.reason.trim(), p_approver: d.approverId });
+    const to = person(d.approverId)?.name ?? ''; S.busy = false; S.adraft = null; S.stack = []; S.tab = 'requests'; S.seg = 'mine';
+    await refreshAll(); render(); toast(`요청을 보냈습니다. 승인권자: ${to}`);
+  }),
+  req: (e) => push('req', { id: e.id, kind: e.k }),
+  decide: (e) => guard(async () => {
+    S.busy = true; await rpc('decide_request', { p_kind: e.k, p_id: e.id, p_decision: e.v, p_comment: null });
+    S.busy = false; S.stack = []; await refreshAll(); render(); toast(e.v === 'approved' ? '승인했습니다.' : '반려했습니다.');
+  }),
+  cancel: (e) => guard(async () => {
+    await rpc('cancel_request', { p_kind: e.k, p_id: e.id });
+    S.stack = []; await refreshAll(); render(); toast('요청을 취소했습니다.');
+  }),
+};
+async function tabLoad() {
+  if (S.tab === 'schedule') { const [a, b] = gridRange(S.cal); await ensureRange(a, b); }
+  if (S.tab === 'records') { const [a, b] = gridRange(S.rec); await ensureRange(a, b); }
+  if (S.tab === 'requests') await loadRequests();
+  if (S.tab === 'leave') { await Promise.all([loadLeave(), loadRequests()]); }
+  render();
+}
+const C = {
+  ad: (el) => guard(async () => {
+    const f = el.dataset.f; S.adraft[f] = el.value;
+    if (f === 'date') {
+      const d = S.adraft; await ensureRange(d.date, d.date);
+      const cur = S.recs[d.date];
+      if (d.action !== 'create') { d.clockIn = cur ? cur.clockIn : ''; d.clockOut = cur && cur.clockOut ? cur.clockOut : ''; }
+    }
+    render();
+  }),
+};
+document.addEventListener('click', (e) => {
+  if (e.target.closest('[data-stop]') && !e.target.closest('[data-a]')) return;
+  const el = e.target.closest('[data-a]');
+  if (!el) return;
+  if (el.classList.contains('sheetbg') && e.target !== el) return;
+  const fn = A[el.dataset.a];
+  if (fn) fn(el.dataset, e);
+});
+document.addEventListener('change', (e) => { const el = e.target.closest && e.target.closest('[data-c]'); if (el && C[el.dataset.c]) C[el.dataset.c](el); });
+document.addEventListener('input', (e) => {
+  const i = e.target.dataset && e.target.dataset.i;
+  if (i === 'reason') { S.draft.reason = e.target.value; const b = $('sendBtn'); if (b) b.disabled = !(S.draft.reason.trim() && S.draft.approverId) || S.busy; }
+  if (i === 'areason') { S.adraft.reason = e.target.value; const b = $('sendBtnA'); if (b) b.disabled = !attOk() || S.busy; }
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && S.view === 'login' && e.target && (e.target.id === 'em' || e.target.id === 'pw')) A.login(); });
+
+if (!CFG || !CFG.url || !CFG.key || /__SUPABASE/.test(CFG.url)) {
+  $('app').innerHTML = '<div class="login"><h1>설정이 필요합니다</h1><div class="card">Supabase 주소와 공개용 키가 설정되지 않았습니다.</div></div>';
+} else if (session) bootMain();
+else { S.view = 'login'; render(); }
+if (typeof window !== 'undefined') { window.__S = S; window.__A = A; window.__C = C; window.__render = render; }
+
+</script>
+</body>
+</html>
