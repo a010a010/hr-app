@@ -219,6 +219,42 @@ button.mcell:focus-visible{outline:2px solid var(--primary);outline-offset:-2px}
 .cell .dot{display:block;width:6px;height:6px;border-radius:3px;background:var(--teal);margin:2px auto 0}
 .cell .mk{display:block;font-size:10px;line-height:1.1;margin-top:2px;color:var(--primary);font-weight:700}
 .cell.sel .mk{color:var(--primary-ink)}
+
+/* 휴가 탭 · 리포트 */
+.utabs{display:grid;grid-template-columns:1fr 1fr;background:var(--card);border-bottom:1px solid var(--line)}
+.utabs button{background:none;border:0;border-bottom:3px solid transparent;padding:14px 0 12px;font-size:17px;font-weight:600;color:var(--muted);cursor:pointer}
+.utabs button.on{color:var(--text);border-bottom-color:var(--text)}
+.gap{height:12px;background:var(--bg);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.gap.tall{height:28px}
+.lvsum,.lvbar,.kvr,.rrow,.repnote{background:var(--card)}
+.lvgrid{display:grid;grid-template-columns:1fr 56px 56px 56px;align-items:center;padding:12px 16px;gap:4px}
+.lvgrid .c{text-align:center;font-size:20px;font-weight:700}
+.lvgrid.lvh .c{font-size:16px;font-weight:500}
+.lvgrid .n{font-size:18px;font-weight:700}
+.blue{color:var(--primary)}
+.datepick{position:relative;display:inline-flex;align-items:center;gap:8px;font-size:18px;font-weight:700;cursor:pointer}
+.datepick input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.lvrow{display:grid;grid-template-columns:96px 1fr;gap:12px;width:100%;text-align:left;background:var(--card);border:0;border-bottom:1px solid var(--line);padding:18px 16px;font:inherit;color:inherit;cursor:pointer}
+.lvrow .lvd{display:flex;flex-direction:column;gap:2px;border-right:1px solid var(--line)}
+.lvrow .lvd b{font-size:18px}.lvrow .lvd span{color:var(--muted);font-size:16px}
+.lvrow .lvt{font-size:17px;font-weight:600}.lvrow .lvt.dim{color:var(--muted);text-decoration:line-through}
+.lvrow .lvr{margin-top:6px;color:var(--muted);font-size:15px;overflow-wrap:anywhere}
+.lvbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.grpsel{border:1.5px solid var(--primary);color:var(--primary);background:var(--card);border-radius:6px;padding:8px 10px;font-size:16px;font-weight:600}
+.kvr{display:flex;align-items:center;justify-content:space-between;width:100%;padding:18px 16px;border:0;border-bottom:1px solid var(--line);font:inherit;color:inherit;text-align:left;font-size:17px}
+button.kvr{cursor:pointer}.kvr b{font-weight:700}.kvr span{display:inline-flex;align-items:center;gap:6px}
+.sect{background:var(--bg);padding:14px 16px;font-weight:700;border-bottom:1px solid var(--line)}
+.grow{display:flex;justify-content:space-between;gap:12px;background:var(--card);padding:16px;border-bottom:1px solid var(--line)}
+.grow .muted{margin-top:6px;font-size:15px}.grow .r{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.rrow{display:flex;align-items:center;justify-content:space-between;width:100%;padding:18px 16px;border:0;border-bottom:1px solid var(--line);font:inherit;color:inherit;font-size:17px;text-align:left}
+button.rrow{cursor:pointer}.rrow span{display:inline-flex;align-items:center;gap:6px}
+.repnote{padding:16px;line-height:1.7;border-bottom:1px solid var(--line);background:var(--bg)}
+.ib.sm{width:36px;height:36px}
+.rowhd{display:flex;align-items:center;justify-content:space-between}
+.lnk{background:none;border:0;color:var(--primary);font-size:15px;font-weight:600;cursor:pointer;padding:6px 0}
+.fab{position:fixed;right:calc((100vw - min(100vw,480px)) / 2 + 20px);bottom:calc(76px + env(safe-area-inset-bottom,0px));width:58px;height:58px;border-radius:50%;border:0;background:var(--primary);color:var(--primary-ink);box-shadow:0 4px 14px rgba(0,0,0,.28);display:grid;place-items:center;z-index:35;cursor:pointer}
+.fab svg{width:26px;height:26px}
+@media (min-width:900px){.fab{right:32px;bottom:32px}}
 </style>
 </head>
 <body>
@@ -659,13 +695,13 @@ async function loadRange(from, to) {
   const uid = session.user.id;
   const [recs, lds, shs] = await Promise.all([
     rest('attendance_records', `select=work_date,clock_in,clock_out,source,in_distance_m,out_distance_m&user_id=eq.${uid}&work_date=gte.${from}&work_date=lte.${to}`),
-    rest('leave_days', `select=leave_date,minutes,deduct_days,type_id,request_id,leave_requests(status)&user_id=eq.${uid}&active=eq.true&leave_date=gte.${from}&leave_date=lte.${to}`),
+    rest('leave_days', `select=leave_date,minutes,deduct_days,deduct_from,type_id,request_id,leave_requests(status)&user_id=eq.${uid}&active=eq.true&leave_date=gte.${from}&leave_date=lte.${to}`),
     rest('work_schedules', `select=work_date,start_time,end_time&user_id=eq.${uid}&work_date=gte.${from}&work_date=lte.${to}`),
   ]);
   for (let d = from; d <= to; d = addDays(d, 1)) { delete S.recs[d]; delete S.lv[d]; delete S.sched[d]; }
   for (const x of shs) S.sched[x.work_date] = { start: x.start_time.slice(0, 5), end: x.end_time.slice(0, 5) };
   for (const r of recs) S.recs[r.work_date] = { date: r.work_date, clockIn: hmSeoul(r.clock_in), clockOut: hmSeoul(r.clock_out), source: r.source, inDist: r.in_distance_m, outDist: r.out_distance_m };
-  for (const l of lds) (S.lv[l.leave_date] = S.lv[l.leave_date] || []).push({ minutes: l.minutes, deduct: l.deduct_days, typeId: l.type_id, reqId: l.request_id, status: l.leave_requests ? l.leave_requests.status : 'pending' });
+  for (const l of lds) (S.lv[l.leave_date] = S.lv[l.leave_date] || []).push({ minutes: l.minutes, deduct: l.deduct_days, from: l.deduct_from, typeId: l.type_id, reqId: l.request_id, status: l.leave_requests ? l.leave_requests.status : 'pending' });
   S.loaded.add(`${from}|${to}`);
 }
 async function ensureRange(from, to) { if (!S.loaded.has(`${from}|${to}`)) await loadRange(from, to); }
@@ -707,7 +743,7 @@ async function loadLeave() {
 }
 async function refreshAll() {
   S.loaded = new Set();
-  await Promise.all([loadHomeData(), loadRequests(), loadLeave()]);
+  await Promise.all([loadHomeData(), loadRequests(), loadLeave(), loadLeaveX()]);
 }
 
 /* ---------- 화면 조각 ---------- */
@@ -723,6 +759,7 @@ function tabbar() {
 function sidebar() {
   const n = pendingCount();
   return `<aside class="side" aria-label="메뉴"><div class="brand">근태·휴가</div><nav>${NAV.map(([k, l, i]) => `<button class="navbtn ${S.tab === k && !S.stack.length ? 'on' : ''}" data-a="tab" data-k="${k}">${ico(i)}<span>${l}</span>${k === 'requests' ? `<span class="badge ${n ? '' : 'gray'}">${n}</span>` : ''}</button>`).join('')}</nav>
+    <nav><button class="navbtn" data-a="reportOpen">${ico('clock')}<span>내 리포트</span></button></nav>
     ${S.me.role === 'admin' ? `<nav><button class="navbtn" data-a="signups">${ico('inbox')}<span>가입 요청</span><span class="badge ${signupCount() ? '' : 'gray'}">${signupCount()}</span></button><button class="navbtn" data-a="go" data-k="admin">${ico('menu')}<span>관리자 메뉴</span></button></nav>` : ''}
     <div class="sidefoot"><div class="who"><b>${esc(S.me.name)}</b><div class="muted small">${esc(orgOf(S.me.org_id)?.name ?? '소속 없음')}${S.me.role === 'admin' ? ' · 관리자' : ''}</div></div>
     <button class="navbtn small" data-a="go" data-k="pw">비밀번호 변경</button><button class="navbtn small" data-a="logout">로그아웃</button></div></aside>`;
@@ -785,7 +822,7 @@ function homeScreen() {
       <div class="kv"><b>출근</b><span>${rec ? rec.clockIn : '-'}${dist(rec && rec.inDist)}</span></div>
       <div class="kv"><b>퇴근</b><span>${rec && rec.clockOut ? rec.clockOut : '-'}${dist(rec && rec.outDist)}</span></div>
       <div class="kv"><b>총 근로시간</b><span class="green">${recordDone(rec) ? hours(dailyWorkMinutes(rec, S.policy)) : '-'}</span></div></div>
-    <div class="card"><h3>이번주 근무</h3><div class="muted small">${md(ws)} - ${md(we)}</div>
+    <div class="card"><div class="rowhd"><h3>이번주 근무</h3><button class="lnk" data-a="reportOpen">내 리포트 ›</button></div><div class="muted small">${md(ws)} - ${md(we)}</div>
       <div class="week">${tiles.join('')}</div>
       <div class="bar" role="img" aria-label="이번주 실제 ${hours(act)} / 계획 ${hours(plan)}"><div class="plan" style="width:${pct(plan)}%"></div><div class="act" style="width:${pct(act)}%"></div>
         <div class="pl" style="left:${pct(plan)}%">계획 ▾</div><div class="tick" style="left:${pct(40 * 60)}%"></div><div class="tick lim" style="left:100%"></div>
@@ -1012,6 +1049,8 @@ function renderSheet() {
   const sh = S.sheet;
   if (!sh) return '';
   const wrap = (inner) => `<div class="sheetbg" data-a="closeSheet"><div class="sheet" role="dialog" aria-modal="true" data-stop="1">${inner}</div></div>`;
+  const exSheet = typeof extraSheet === 'function' ? extraSheet(sh, wrap) : null;
+  if (exSheet) return exSheet;
   if (sh.k === 'request') {
     const items = [['근무일정 요청', 'schedNew', ''], ['출퇴근기록 생성', 'attNew', 'create'], ['출퇴근기록 수정', 'attNew', 'edit'], ['출퇴근기록 삭제', 'attNew', 'delete'], ['휴가 생성', 'leaveNew', '']];
     return wrap(`<div class="sh">요청 종류를 선택하세요.</div>${items.map(([l, a, k]) => `<button class="si" data-a="${a}" data-k="${k}">${l}</button>`).join('')}<button class="si" data-a="closeSheet">취소</button>`);
@@ -1046,7 +1085,7 @@ function renderSheet() {
     return `<div class="sheetbg" style="justify-content:flex-start;align-items:stretch" data-a="closeSheet"><div class="drawer" role="dialog" aria-modal="true" data-stop="1">
       <div style="padding:0 20px 14px"><b style="font-size:18px">${esc(S.me.name)}</b><div class="muted small">${esc(orgOf(S.me.org_id)?.name ?? '소속 없음')}${S.me.role === 'admin' ? ' · 관리자' : ''}</div></div>
       ${S.me.role === 'admin' ? `<button class="si" data-a="go" data-k="admin">관리자 메뉴</button><button class="si" data-a="signups">가입 요청 (${signupCount()})</button>` : ''}
-      <button class="si" data-a="go" data-k="pw">비밀번호 변경</button>
+      <button class="si" data-a="reportOpen">내 리포트</button><button class="si" data-a="go" data-k="pw">비밀번호 변경</button>
       <button class="si" data-a="reload">새로고침</button><button class="si" data-a="logout">로그아웃</button><button class="si" data-a="closeSheet">닫기</button></div></div>`;
   }
   return '';
@@ -1130,7 +1169,7 @@ async function loadSignupStatus() {
 async function doLogout(expired) {
   try { if (session && !expired) await fetch(CFG.url + '/auth/v1/logout', { method: 'POST', headers: { apikey: CFG.key, Authorization: `Bearer ${session.access_token}` } }); } catch (e) { /* 무시 */ }
   session = null; store.set(null);
-  Object.assign(S, { me: null, view: 'login', stack: [], sheet: null, tab: 'home', recs: {}, lv: {}, bal: null, myLeave: [], myAtt: [], inboxLeave: [], inboxAtt: [], loaded: new Set(), draft: null, adraft: null, signupReq: null, signups: [], sched: {}, mySch: [], inboxSch: [], sdraft: null, info: '', authMode: 'login', authError: expired ? '로그인 시간이 지났습니다. 다시 로그인해 주세요.' : '' });
+  Object.assign(S, { me: null, view: 'login', stack: [], sheet: null, tab: 'home', recs: {}, lv: {}, bal: null, myLeave: [], myAtt: [], inboxLeave: [], inboxAtt: [], loaded: new Set(), draft: null, adraft: null, signupReq: null, signups: [], sched: {}, mySch: [], inboxSch: [], sdraft: null, lvx: { date: null, tab: 'my', group: 'annual', grants: null, days: null }, rep: null, info: '', authMode: 'login', authError: expired ? '로그인 시간이 지났습니다. 다시 로그인해 주세요.' : '' });
   render();
 }
 
@@ -1334,7 +1373,7 @@ async function tabLoad() {
   if (S.tab === 'schedule') { const [a, b] = gridRange(S.cal); await ensureRange(a, b); }
   if (S.tab === 'records') { const [a, b] = gridRange(S.rec); await ensureRange(a, b); }
   if (S.tab === 'requests') await loadRequests();
-  if (S.tab === 'leave') { await Promise.all([loadLeave(), loadRequests()]); }
+  if (S.tab === 'leave') { await Promise.all([loadLeave(), loadRequests(), loadLeaveX()]); }
   render();
 }
 const C = {
@@ -1513,7 +1552,7 @@ function adminHolidaysPage() {
 /* ----- 규칙 ----- */
 function adminRulesPage() {
   const rules = S.adm.rules || [], cur = rules.find((r) => r.effective_from <= S.today) || rules[0] || { break_minutes: 60, daily_minutes: 480, weekly_holiday_dow: [0] };
-  const ck = S.settings.clock_rules || {}, lr = leavePolicyOf(), ap = S.settings.approval_policy || {}, notice = (S.settings.notice || {}).leave_request || '', sp = (S.settings.signup_policy || {}).allowed_domains || [];
+  const ar = S.settings.attendance_rules || {}, ck = S.settings.clock_rules || {}, lr = leavePolicyOf(), ap = S.settings.approval_policy || {}, notice = (S.settings.notice || {}).leave_request || '', sp = (S.settings.signup_policy || {}).allowed_domains || [];
   const members = (S.adm.people || []).filter((p) => p.status === 'active');
   const level = ap.max_levels_up == null ? 'all' : String(ap.max_levels_up);
   return { header: header({ back: true, title: '근무·출근·연차 규칙' }), cls: 'narrow', body: `
@@ -1526,6 +1565,10 @@ function adminRulesPage() {
     <div class="field">${chk('ck-req', '근무일정이 승인된 날에만 출근 가능', ck.require_schedule !== false)}</div>
     ${fld('ck-min', '일정 시작 몇 분 전부터 출근 가능', txt('ck-min', ck.before_start_minutes ?? 30, 'number', 'min="0" max="240" step="5"'))}
     <div class="btns"><button class="btn primary block" data-a="saveClock">출근 규칙 저장</button></div>
+    ${secTitle('지각·조퇴 판정 (리포트)')}
+    ${fld('ar-late', '지각으로 보지 않는 유예 (분)', txt('ar-late', ar.late_grace_minutes ?? 0, 'number', 'min="0" max="120" step="1"'))}
+    ${fld('ar-early', '조퇴로 보지 않는 유예 (분)', txt('ar-early', ar.early_grace_minutes ?? 0, 'number', 'min="0" max="120" step="1"'))}
+    <div class="btns"><button class="btn primary block" data-a="saveAttRules">지각·조퇴 기준 저장</button></div>
     ${secTitle('연차 기준')}
     ${fld('lr-basis', '연차 부여 기준', sel('lr-basis', [['fiscal_year', '회계연도 기준 (퇴직 시 입사일 기준 재정산)'], ['hire_date', '입사일 기준']], lr.basis))}
     ${fld('lr-month', '회계연도 시작 월', sel('lr-month', Array.from({ length: 12 }, (_, i) => [i + 1, `${i + 1}월`]), lr.fiscalYearStartMonth))}
@@ -1710,6 +1753,10 @@ Object.assign(A, {
     need(); const m = Number(val('ck-min')); if (!(m >= 0 && m <= 240)) return toast('0~240분으로 입력해 주세요.');
     await saveSetting('clock_rules', { require_schedule: isOn('ck-req'), before_start_minutes: Math.round(m) }); render(); toast('저장했습니다.');
   }),
+  saveAttRules: () => guard(async () => {
+    need(); const l = Number(val('ar-late')), e = Number(val('ar-early')); if (!(l >= 0 && l <= 120 && e >= 0 && e <= 120)) return toast('0~120분으로 입력해 주세요.');
+    await saveSetting('attendance_rules', { late_grace_minutes: Math.round(l), early_grace_minutes: Math.round(e) }); render(); toast('저장했습니다.');
+  }),
   saveLeaveRules: () => guard(async () => { need(); await saveSetting('leave_rules', { basis: val('lr-basis'), fiscal_start_month: Number(val('lr-month')), prorate_rounding: val('lr-round') }); render(); toast('저장했습니다.'); }),
   saveApproval: () => guard(async () => {
     need(); const lv = val('ap-level'), extra = (S.adm.people || []).filter((p) => p.status === 'active' && isOn(`ap-x-${p.id}`)).map((p) => p.id);
@@ -1754,6 +1801,177 @@ Object.assign(A, {
     try { await api('PUT', '/auth/v1/user', { password: a }); S.stack.pop(); render(); toast('비밀번호를 변경했습니다.'); }
     catch (e) { if (e instanceof ApiError && e.status === 401) throw e; toast(/different from the old|same/i.test(e.message || '') ? '이전과 다른 비밀번호를 입력해 주세요.' : /password/i.test(e.message || '') ? '비밀번호 규칙에 맞지 않습니다. 더 길고 복잡하게 만들어 주세요.' : errText(e)); }
   }),
+});
+
+/* ---------- 휴가(내 휴가 · 휴가 관리) · 리포트 ---------- */
+const KDOW = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+const r2 = (n) => Math.round(n * 100) / 100;
+const fmtN = (n) => String(r2(n));
+const dotD = (d) => d.replaceAll('-', '.');
+const rangeLabel = (a, b) => `${dotD(a)} - ${a.slice(0, 4) === b.slice(0, 4) ? dotD(b).slice(5) : dotD(b)}`;
+const kdate = (d) => `${dotD(d)}(${DOW[dayOfWeek(d)]})`;
+S.lvx = { date: null, tab: 'my', group: 'annual', grants: null, days: null };
+S.rep = null;
+
+/* 기준일이 속한 연차 산정 기간 */
+function leavePeriodFor(d) {
+  const lr = S.settings.leave_rules || {}, hire = S.me.hire_date;
+  if ((lr.basis || 'fiscal_year') === 'hire_date') {
+    if (d < hire) return null;
+    const hm = +hire.slice(5, 7), hd = +hire.slice(8, 10);
+    const ann = (y) => `${y}-${p2(hm)}-${p2(Math.min(hd, daysInMonth(y, hm)))}`;
+    let y = +d.slice(0, 4); if (ann(y) > d) y -= 1;
+    if (y < +hire.slice(0, 4)) y = +hire.slice(0, 4);
+    return { start: ann(y) < hire ? hire : ann(y), end: addDays(ann(y + 1), -1) };
+  }
+  const m0 = lr.fiscal_start_month || 1, y = +d.slice(0, 4), yy = +d.slice(5, 7) >= m0 ? y : y - 1;
+  return { start: `${yy}-${p2(m0)}-01`, end: addDays(`${yy + 1}-${p2(m0)}-01`, -1) };
+}
+
+async function loadLeaveX() {
+  const uid = session.user.id;
+  const [grants, days] = await Promise.all([
+    rest('leave_grants', `select=id,kind,grant_date,days,expires_on,source,note&user_id=eq.${uid}&order=grant_date`),
+    restAll('leave_days', `select=leave_date,minutes,deduct_days,deduct_from,type_id,request_id,leave_requests(status)&user_id=eq.${uid}&active=eq.true&order=leave_date`),
+  ]);
+  S.lvx.grants = grants; S.lvx.days = days; if (!S.lvx.date) S.lvx.date = S.today;
+}
+
+/* 기준일의 연차·기타 휴가 산정 */
+function leaveX(date) {
+  const x = S.lvx, per = leavePeriodFor(date), counted = (r) => !!r && (r.status === 'approved' || r.status === 'pending');
+  const inP = (d) => !!per && d >= per.start && d <= per.end;
+  const annualDays = x.days.filter((d) => d.deduct_from === 'annual' && counted(d.leave_requests) && inP(d.leave_date));
+  const used = r2(annualDays.reduce((s, d) => s + Number(d.deduct_days), 0));
+  const gs = per ? x.grants.filter((g) => g.grant_date <= per.end && g.expires_on >= per.start) : [];
+  let total, remaining;
+  if (per && S.today >= per.start && S.today <= per.end && S.bal && S.bal.period_end) { remaining = r2(Number(S.bal.remaining)); total = r2(remaining + used); }
+  else { total = r2(gs.reduce((s, g) => s + Number(g.days), 0)); remaining = r2(total - used); }
+  const yr = date.slice(0, 4);
+  const etc = S.types.filter((t) => t.deduct_from === 'quota').map((t) => {
+    const rows = x.days.filter((d) => d.type_id === t.id && counted(d.leave_requests) && d.leave_date.slice(0, 4) === yr);
+    const u = r2(rows.reduce((s, d) => s + Number(d.deduct_days), 0)), tot = Number(t.quota_days || 0);
+    return { t, total: tot, used: u, remain: r2(tot - u), rows };
+  });
+  const etcSum = { total: r2(etc.reduce((s, e) => s + e.total, 0)), used: r2(etc.reduce((s, e) => s + e.used, 0)), remain: r2(etc.reduce((s, e) => s + e.remain, 0)) };
+  return { per, total, used, remaining, gs, annualDays, etc, etcSum };
+}
+
+const datePicker = (date) => `<label class="datepick"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span>${kdate(date)}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><input type="date" value="${date}" data-c="lvd" aria-label="기준일 선택"></label>`;
+const reqTypeTitle = (r) => `${typeOf(r.type_id)?.name ?? '휴가'}${r.dates.length > 1 ? ` (${r.dates.length}일)` : ''}`;
+const grantLabel = (g) => (g.kind === 'monthly' ? '입사 첫해 1개월 만근 월차' : g.kind === 'prorated' ? '입사 첫해 비례 연차' : g.kind === 'annual' ? '연차 발생' : (g.note || '수동 조정'));
+
+function leaveScreenV2() {
+  if (!S.bal || !S.lvx.grants || !S.lvx.days) return { header: header({ title: '휴가' }), cls: 'narrow', body: spinner };
+  const x = S.lvx, date = x.date || S.today, L = leaveX(date), picker = datePicker(date);
+  const tabs = `<div class="utabs" role="tablist"><button role="tab" aria-selected="${x.tab === 'my'}" class="${x.tab === 'my' ? 'on' : ''}" data-a="lvTab" data-k="my">내 휴가</button><button role="tab" aria-selected="${x.tab === 'manage'}" class="${x.tab === 'manage' ? 'on' : ''}" data-a="lvTab" data-k="manage">휴가 관리</button></div>`;
+  let body;
+  if (x.tab === 'my') {
+    const inPer = (r) => !L.per || (r.dates[0] >= L.per.start && r.dates[0] <= L.per.end);
+    const list = S.myLeave.filter(inPer).sort((a, b) => b.dates[0].localeCompare(a.dates[0]));
+    body = `<div class="lvsum"><div class="lvgrid lvh"><div>${picker}</div><div class="c">총</div><div class="c">사용</div><div class="c">잔여</div></div>
+      <div class="lvgrid lvl"><div class="n">1. 연차휴가</div><div class="c">${fmtN(L.total)}</div><div class="c">${fmtN(L.used)}</div><div class="c blue">${fmtN(L.remaining)}</div></div>
+      ${L.etc.length ? `<div class="lvgrid lvl"><div class="n">2. 기타</div><div class="c">${fmtN(L.etcSum.total)}</div><div class="c">${fmtN(L.etcSum.used)}</div><div class="c blue">${fmtN(L.etcSum.remain)}</div></div>` : ''}
+      ${L.per ? '' : '<div class="muted small" style="padding:8px 16px">입사 전 날짜입니다.</div>'}</div><div class="gap"></div>
+      ${list.map((r) => `<button class="lvrow" data-a="req" data-k="leave" data-id="${r.id}"><div class="lvd"><b>${md(r.dates[0])}</b><span>${KDOW[dayOfWeek(r.dates[0])]}</span></div><div class="lvb"><div class="lvt ${r.status === 'rejected' || r.status === 'cancelled' ? 'dim' : ''}">${esc(reqTypeTitle(r))} ${r.status !== 'approved' || r.cancel_requested ? `<span class="chip ${stClass(r)}">${stLabel(r)}</span>` : ''}</div><div class="lvr">${esc(r.reason || '')}</div></div></button>`).join('') || '<div class="empty">이 기간의 휴가 내역이 없습니다.</div>'}`;
+  } else {
+    const etcMode = x.group === 'etc';
+    const gsel = `<select class="grpsel" data-c="lvg" aria-label="휴가 그룹"><option value="annual" ${etcMode ? '' : 'selected'}>1. 연차휴가</option>${L.etc.length ? `<option value="etc" ${etcMode ? 'selected' : ''}>2. 기타</option>` : ''}</select>`;
+    const per = etcMode ? { start: `${date.slice(0, 4)}-01-01`, end: `${date.slice(0, 4)}-12-31` } : L.per;
+    const head = `<div class="lvbar"><div>${picker}</div>${gsel}</div><div class="kvr"><b>산정 기간</b><span>${per ? rangeLabel(per.start, per.end) : '-'}</span></div><div class="gap"></div>`;
+    if (!etcMode) {
+      const grants = x.grants.slice().sort((a, b) => a.grant_date.localeCompare(b.grant_date));
+      body = `${head}<div class="kvr"><b>총 휴가 일수</b><span>${fmtN(L.total)}</span></div>
+        <button class="kvr" data-a="usedOpen"><b>사용한 휴가 일수</b><span>${fmtN(L.used)} ${ico('chev')}</span></button>
+        <div class="kvr"><b>남은 휴가 일수</b><span>${fmtN(L.remaining)}</span></div>
+        <div class="gap tall"></div><div class="sect">휴가 발생 내역</div>
+        ${grants.map((g) => `<div class="grow"><div><b>${dotD(g.grant_date)} - ${dotD(g.expires_on)}</b><div class="muted">${esc(grantLabel(g))}</div></div><div class="r"><b>${fmtN(g.days)}일</b>${g.expires_on < S.today ? '<span class="chip">만료됨</span>' : ''}</div></div>`).join('') || '<div class="empty">발생 내역이 없습니다.</div>'}`;
+    } else {
+      body = `${head}${L.etc.map((e) => `<div class="kvr"><b>${esc(e.t.name)}</b><span>총 ${fmtN(e.total)} · 사용 ${fmtN(e.used)} · 남음 ${fmtN(e.remain)}</span></div>`).join('')}
+        <div class="gap tall"></div><div class="sect">사용 내역</div>
+        ${L.etc.flatMap((e) => e.rows.map((d) => ({ e, d }))).sort((a, b) => b.d.leave_date.localeCompare(a.d.leave_date)).map(({ e, d }) => `<div class="grow"><div><b>${dotD(d.leave_date)}</b><div class="muted">${esc(e.t.name)}</div></div><div class="r"><b>-${fmtN(d.deduct_days)}일</b></div></div>`).join('') || '<div class="empty">사용 내역이 없습니다.</div>'}`;
+    }
+  }
+  return { header: header({ title: '휴가' }), cls: 'narrow', body: `<div class="bleed">${tabs}${body}</div><button class="fab" data-a="leaveNew" aria-label="휴가 신청">${ico('plane')}</button>` };
+}
+TABS.leave = leaveScreenV2;
+
+/* ----- 리포트 ----- */
+function calcReport(y, m) {
+  const ar = S.settings.attendance_rules || {}, lateG = Number(ar.late_grace_minutes || 0), earlyG = Number(ar.early_grace_minutes || 0);
+  const out = { late: [], early: [], absent: [], missing: [], leaveList: [], deductList: [], leaveDays: 0, deduct: 0, paidMin: 0 };
+  for (let n = 1; n <= daysInMonth(y, m); n++) {
+    const d = `${y}-${p2(m)}-${p2(n)}`, sc = S.sched[d], r = S.recs[d], lv = (S.lv[d] || []).filter((l) => l.status === 'approved');
+    if (lv.length) {
+      out.leaveDays += 1; out.paidMin += lv.reduce((s, l) => s + l.minutes, 0); out.deduct += lv.reduce((s, l) => s + Number(l.deduct || 0), 0);
+      for (const l of lv) { out.leaveList.push({ date: d, typeId: l.typeId, minutes: l.minutes }); if (Number(l.deduct || 0) > 0) out.deductList.push({ date: d, typeId: l.typeId, deduct: l.deduct }); }
+    }
+    if (d > S.today) continue;
+    if (r && !r.clockOut && d < S.today) out.missing.push({ date: d, actual: r.clockIn });
+    if (lv.length || !sc) continue;                 // 휴가가 있는 날, 일정이 없는 날은 지각·조퇴·결근 판정에서 제외
+    if (!r) { if (d < S.today) out.absent.push({ date: d, sc }); continue; }
+    if (toMinutes(r.clockIn) > toMinutes(sc.start) + lateG) out.late.push({ date: d, actual: r.clockIn, plan: sc.start });
+    if (r.clockOut && toMinutes(r.clockOut) < toMinutes(sc.end) - earlyG) out.early.push({ date: d, actual: r.clockOut, plan: sc.end });
+  }
+  out.deduct = r2(out.deduct); out.paidDays = r2(out.paidMin / (S.policy.leaveHoursPerDay * 60)); out.paidHours = r2(out.paidMin / 60);
+  return out;
+}
+const REPROWS = [['late', '지각'], ['early', '조퇴'], ['absent', '결근'], ['missing', '퇴근 누락'], ['leaveDays', '휴가 일수'], ['deduct', '휴가 차감 일수'], ['paidDays', '유급휴가일수', 'info'], ['paidHours', '유급휴가시간', 'info']];
+function reportPage() {
+  const r = S.rep || { y: +S.today.slice(0, 4), m: +S.today.slice(5, 7) }, c = calcReport(r.y, r.m), ms = monthSummary(r.y, r.m);
+  const last = daysInMonth(r.y, r.m), val2 = (k) => (k === 'paidHours' ? `${fmtN(c.paidHours)}h` : k === 'deduct' || k === 'paidDays' ? `${fmtN(c[k])}일` : `${Array.isArray(c[k]) ? c[k].length : c[k]}일`);
+  const rows = REPROWS.map(([k, label, info]) => info
+    ? `<div class="rrow"><b>${label}</b><span>${val2(k)} <button class="ib sm" data-a="infoOpen" data-k="${k}" aria-label="${label} 설명"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6M12 7.5v.5"/></svg></button></span></div>`
+    : `<button class="rrow" data-a="repRow" data-k="${k}"><b>${label}</b><span>${val2(k)} ${ico('chev')}</span></button>`).join('');
+  return { header: header({ back: true, title: '리포트' }), cls: 'narrow', body: `<div class="bleed"><div class="lvbar"><button class="ib" data-a="repNav2" data-n="-1" aria-label="이전 달">${ico('back')}</button><b>${p2(r.m)}.01 - ${p2(r.m)}.${p2(last)} <span class="muted small">(${r.y})</span></b><button class="ib" data-a="repNav2" data-n="1" aria-label="다음 달">${ico('chev')}</button></div>
+    <div class="repnote">아래 <b>근로시간</b>은 <b>휴게시간</b>이 차감된 시간입니다.<br>아래 <b>유급시간</b>은 근로시간에 <b>유급휴가시간</b>이 더해진 시간입니다.</div>
+    ${rows}<div class="gap"></div>
+    <div class="rrow"><b>근로시간</b><span>${hours(ms.workMinutes)}</span></div><div class="rrow"><b>유급시간</b><span>${hours(ms.workMinutes + ms.leaveMinutes)}</span></div>
+    <div class="rrow"><b>휴일근로시간</b><span>${hours(ms.holidayWorkMinutes)}</span></div><div class="rrow"><b>월 소정근로시간</b><span>${hours(ms.scheduled)}</span></div>
+    <div class="rrow"><b>소정 대비 (평일 합계 − 소정)</b><span class="${ms.weekdayMinutes - ms.scheduled >= 0 ? 'green' : 'sun'}">${ms.weekdayMinutes - ms.scheduled >= 0 ? '+' : '-'}${hours(Math.abs(ms.weekdayMinutes - ms.scheduled))}</span></div>
+    <div class="repnote small">지각·조퇴·결근은 승인된 근무일정을 기준으로 판정하며, 휴가가 있는 날은 제외합니다. 조퇴·퇴근 누락은 퇴근 기록을 기준으로 합니다.</div></div>` };
+}
+PAGES.report = reportPage;
+
+/* ----- 시트: 사용 내역 / 리포트 상세 / 설명 ----- */
+function extraSheet(sh, wrap) {
+  const close = '<button class="si" data-a="closeSheet">닫기</button>', item = (l, r) => `<div class="kv" style="padding:10px 20px;border-top:1px solid var(--line)"><span>${l}</span><span>${r}</span></div>`;
+  if (sh.k === 'usedList') {
+    const L = leaveX(S.lvx.date || S.today), rows = L.annualDays.slice().sort((a, b) => b.leave_date.localeCompare(a.leave_date));
+    return wrap(`<div class="sh" style="font-weight:700;color:var(--text)">사용한 연차 (${fmtN(L.used)}일)</div><div style="max-height:56vh;overflow:auto">${rows.map((d) => item(`${md(d.leave_date)} (${DOW[dayOfWeek(d.leave_date)]}) ${esc(typeOf(d.type_id)?.name ?? '휴가')}`, `-${fmtN(d.deduct_days)}일 ${d.leave_requests && d.leave_requests.status === 'pending' ? '<span class="chip wait">대기</span>' : ''}`)).join('') || '<div class="empty">사용 내역이 없습니다.</div>'}</div>${close}`);
+  }
+  if (sh.k === 'repList') {
+    const r = S.rep || {}, c = calcReport(r.y, r.m), T = { late: '지각', early: '조퇴', absent: '결근', missing: '퇴근 누락', leaveDays: '휴가 일수', deduct: '휴가 차감 일수' }[sh.kind];
+    const d = (x) => `${md(x)} (${DOW[dayOfWeek(x)]})`;
+    const list = { late: c.late.map((x) => item(d(x.date), `출근 ${x.actual} <span class="muted small">(일정 ${x.plan})</span>`)), early: c.early.map((x) => item(d(x.date), `퇴근 ${x.actual} <span class="muted small">(일정 ${x.plan})</span>`)),
+      absent: c.absent.map((x) => item(d(x.date), `<span class="muted small">일정 ${x.sc.start}-${x.sc.end} · 기록 없음</span>`)), missing: c.missing.map((x) => item(d(x.date), `출근 ${x.actual} <span class="muted small">(퇴근 기록 없음)</span>`)),
+      leaveDays: c.leaveList.map((x) => item(d(x.date), `${esc(typeOf(x.typeId)?.name ?? '휴가')} ${fmtN(x.minutes / 60)}h`)), deduct: c.deductList.map((x) => item(d(x.date), `${esc(typeOf(x.typeId)?.name ?? '휴가')} -${fmtN(x.deduct)}일`)) }[sh.kind] || [];
+    return wrap(`<div class="sh" style="font-weight:700;color:var(--text)">${T} (${r.m}월)</div><div style="max-height:56vh;overflow:auto">${list.join('') || '<div class="empty">해당하는 날이 없습니다.</div>'}</div>${close}`);
+  }
+  if (sh.k === 'info') {
+    const T = { paidDays: ['유급휴가일수', `승인된 휴가의 유급 인정 시간을 하루(${S.policy.leaveHoursPerDay}시간)로 나눈 값입니다. 반차는 0.5일로 계산됩니다.`], paidHours: ['유급휴가시간', '승인된 휴가에서 급여가 지급되는 것으로 인정한 시간의 합계입니다. 근로시간에 더해져 유급시간이 됩니다.'] }[sh.kind];
+    return wrap(`<div class="sh" style="font-weight:700;color:var(--text)">${T[0]}</div><div style="padding:0 20px 12px">${esc(T[1])}</div>${close}`);
+  }
+  return null;
+}
+
+/* ----- 동작 ----- */
+Object.assign(C, {
+  lvd: (el) => { S.lvx.date = el.value || S.today; render(); },
+  lvg: (el) => { S.lvx.group = el.value; render(); },
+});
+Object.assign(A, {
+  lvTab: (e) => { S.lvx.tab = e.k; render(); },
+  usedOpen: () => { S.sheet = { k: 'usedList' }; render(); },
+  reportOpen: () => guard(async () => {
+    S.rep = S.rep || { y: +S.today.slice(0, 4), m: +S.today.slice(5, 7) };
+    const [a, b] = [`${S.rep.y}-${p2(S.rep.m)}-01`, `${S.rep.y}-${p2(S.rep.m)}-${p2(daysInMonth(S.rep.y, S.rep.m))}`]; await ensureRange(a, b); S.sheet = null; push('report');
+  }),
+  repNav2: (e) => guard(async () => {
+    S.rep = shiftMonth(S.rep, +e.n); const a = `${S.rep.y}-${p2(S.rep.m)}-01`, b = `${S.rep.y}-${p2(S.rep.m)}-${p2(daysInMonth(S.rep.y, S.rep.m))}`; render(); await ensureRange(a, b); render();
+  }),
+  repRow: (e) => { S.sheet = { k: 'repList', kind: e.k }; render(); },
+  infoOpen: (e) => { S.sheet = { k: 'info', kind: e.k }; render(); },
 });
 
 document.addEventListener('click', (e) => {
