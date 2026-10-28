@@ -255,6 +255,12 @@ button.rrow{cursor:pointer}.rrow span{display:inline-flex;align-items:center;gap
 .fab{position:fixed;right:calc((100vw - min(100vw,480px)) / 2 + 20px);bottom:calc(76px + env(safe-area-inset-bottom,0px));width:58px;height:58px;border-radius:50%;border:0;background:var(--primary);color:var(--primary-ink);box-shadow:0 4px 14px rgba(0,0,0,.28);display:grid;place-items:center;z-index:35;cursor:pointer}
 .fab svg{width:26px;height:26px}
 @media (min-width:900px){.fab{right:32px;bottom:32px}}
+
+.searchbox{margin:0 0 12px}
+.searchbox input{width:100%;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:16px;color:var(--text)}
+.orgrow{display:flex;align-items:center;justify-content:space-between;width:100%;text-align:left;background:var(--card);border:0;border-top:1px solid var(--line);padding:14px 16px;font:inherit;color:inherit;cursor:pointer}
+.orgrow:first-child{border-top:0}
+.orgn{font-size:17px;font-weight:600}
 </style>
 </head>
 <body>
@@ -632,6 +638,8 @@ function errText(e) {
   if ((x = /^no schedule on (.+)$/.exec(m))) return `${md(x[1])}에는 삭제할 근무일정이 없습니다.`;
   if (/^date out of range: /.test(m)) return '오늘부터 120일 이내의 날짜만 요청할 수 있습니다.';
   if (/^date beyond current leave period/.test(m)) return '현재 연차 기간을 벗어난 날짜입니다.';
+  if (/email rate limit|over_email_send_rate_limit/i.test(m)) return '확인 메일 발송 한도를 넘었습니다. 잠시(약 1시간) 뒤에 다시 시도하거나 관리자에게 알려 주세요.';
+  if (/security purposes|over_request_rate_limit|too many requests/i.test(m)) return '요청이 너무 많습니다. 잠시 뒤에 다시 시도해 주세요.';
   if (/duplicate key/.test(m)) return '이미 같은 값이 있습니다.';
   if (/violates foreign key/.test(m)) return '다른 데이터에서 사용 중이라 지울 수 없습니다.';
   if (/violates check constraint/.test(m)) return '입력값이 규칙에 맞지 않습니다.';
@@ -759,7 +767,7 @@ function tabbar() {
 function sidebar() {
   const n = pendingCount();
   return `<aside class="side" aria-label="메뉴"><div class="brand">근태·휴가</div><nav>${NAV.map(([k, l, i]) => `<button class="navbtn ${S.tab === k && !S.stack.length ? 'on' : ''}" data-a="tab" data-k="${k}">${ico(i)}<span>${l}</span>${k === 'requests' ? `<span class="badge ${n ? '' : 'gray'}">${n}</span>` : ''}</button>`).join('')}</nav>
-    <nav><button class="navbtn" data-a="reportOpen">${ico('clock')}<span>내 리포트</span></button></nav>
+    <nav><button class="navbtn" data-a="reportOpen">${ico('clock')}<span>내 리포트</span></button><button class="navbtn" data-a="orgOpen">${ico('menu')}<span>조직도</span></button></nav>
     ${S.me.role === 'admin' ? `<nav><button class="navbtn" data-a="signups">${ico('inbox')}<span>가입 요청</span><span class="badge ${signupCount() ? '' : 'gray'}">${signupCount()}</span></button><button class="navbtn" data-a="go" data-k="admin">${ico('menu')}<span>관리자 메뉴</span></button></nav>` : ''}
     <div class="sidefoot"><div class="who"><b>${esc(S.me.name)}</b><div class="muted small">${esc(orgOf(S.me.org_id)?.name ?? '소속 없음')}${S.me.role === 'admin' ? ' · 관리자' : ''}</div></div>
     <button class="navbtn small" data-a="go" data-k="pw">비밀번호 변경</button><button class="navbtn small" data-a="logout">로그아웃</button></div></aside>`;
@@ -1085,7 +1093,7 @@ function renderSheet() {
     return `<div class="sheetbg" style="justify-content:flex-start;align-items:stretch" data-a="closeSheet"><div class="drawer" role="dialog" aria-modal="true" data-stop="1">
       <div style="padding:0 20px 14px"><b style="font-size:18px">${esc(S.me.name)}</b><div class="muted small">${esc(orgOf(S.me.org_id)?.name ?? '소속 없음')}${S.me.role === 'admin' ? ' · 관리자' : ''}</div></div>
       ${S.me.role === 'admin' ? `<button class="si" data-a="go" data-k="admin">관리자 메뉴</button><button class="si" data-a="signups">가입 요청 (${signupCount()})</button>` : ''}
-      <button class="si" data-a="reportOpen">내 리포트</button><button class="si" data-a="go" data-k="pw">비밀번호 변경</button>
+      <button class="si" data-a="orgOpen">조직도</button><button class="si" data-a="reportOpen">내 리포트</button><button class="si" data-a="go" data-k="pw">비밀번호 변경</button>
       <button class="si" data-a="reload">새로고침</button><button class="si" data-a="logout">로그아웃</button><button class="si" data-a="closeSheet">닫기</button></div></div>`;
   }
   return '';
@@ -1974,6 +1982,44 @@ Object.assign(A, {
   infoOpen: (e) => { S.sheet = { k: 'info', kind: e.k }; render(); },
 });
 
+/* ----- 조직도 (모든 직원) ----- */
+S.orgq = '';
+function orgListHtml() {
+  const q = (S.orgq || '').trim().toLowerCase(), people = S.people.filter((x) => x.status === 'active');
+  const members = (id) => people.filter((x) => x.org_id === id);
+  const rows = orgRows().map(({ o, depth }) => {
+    const ms = members(o.id), hit = q ? ms.filter((x) => x.name.toLowerCase().includes(q)) : [];
+    return { o, depth, ms, hit, show: !q || o.name.toLowerCase().includes(q) || hit.length > 0 };
+  }).filter((r) => r.show);
+  return rows.map(({ o, depth, ms, hit }) => {
+    const head = people.find((x) => x.id === o.head_id);
+    return `<button class="orgrow" style="padding-left:${16 + depth * 24}px" data-a="orgDetail" data-id="${o.id}"><div><div class="orgn">${depth ? '<span class="muted">└ </span>' : ''}${esc(o.name)}</div><div class="muted small">${esc(o.head_title)}: ${head ? esc(head.name) : '공석'} · ${ms.length}명${hit.length ? ` · <b>${hit.map((x) => esc(x.name)).join(', ')}</b>` : ''}</div></div><span class="chev">${ico('chev')}</span></button>`;
+  }).join('') || '<div class="empty">검색 결과가 없습니다.</div>';
+}
+function orgChartPage() {
+  return { header: header({ back: true, title: '조직도' }), cls: 'narrow', body: `<div class="searchbox"><input id="orgq" type="search" data-i="orgq" value="${esc(S.orgq)}" placeholder="조직·이름 검색" aria-label="조직이나 이름 검색" autocomplete="off"></div><div class="card flush" id="orgl">${orgListHtml()}</div>` };
+}
+function orgDetailPage(p) {
+  const o = S.orgs.find((x) => x.id === p.id); if (!o) return { header: header({ back: true, title: '조직' }), cls: 'narrow', body: '<div class="empty">조직을 찾을 수 없습니다.</div>' };
+  const people = S.people.filter((x) => x.status === 'active'), head = people.find((x) => x.id === o.head_id);
+  const ms = people.filter((x) => x.org_id === o.id && x.id !== o.head_id).sort((a, b) => a.name.localeCompare(b.name));
+  const subs = S.orgs.filter((x) => x.parent_id === o.id).sort((a, b) => (a.sort - b.sort) || a.name.localeCompare(b.name));
+  const path = []; for (let c = o; c; c = S.orgs.find((x) => x.id === c.parent_id)) path.unshift(c.name);
+  return { header: header({ back: true, title: o.name }), cls: 'narrow', body: `<div class="muted small" style="padding:0 4px 10px">${esc(path.join(' › '))}</div>
+    <div class="card flush"><div class="kv" style="padding:14px 16px"><b>${esc(o.head_title)}</b><span>${head ? esc(head.name) : '공석'}</span></div>
+      ${ms.map((x) => `<div class="kv" style="padding:14px 16px;border-top:1px solid var(--line)"><span>${esc(x.name)}</span></div>`).join('')}${!head && !ms.length ? '<div class="empty">소속 직원이 없습니다.</div>' : ''}</div>
+    ${subs.length ? `<div class="sect" style="border:1px solid var(--line);border-radius:10px 10px 0 0">하위 조직</div><div class="card flush" style="border-radius:0 0 10px 10px">${subs.map((x) => `<button class="rowbtn" style="font-weight:500;border-top:1px solid var(--line)" data-a="orgDetail" data-id="${x.id}"><span>${esc(x.name)}</span><span class="chev">${ico('chev')}</span></button>`).join('')}</div>` : ''}` };
+}
+PAGES.orgchart = orgChartPage; PAGES.orgdetail = orgDetailPage;
+function extraInput(i, e) {
+  if (i !== 'orgq') return false;
+  S.orgq = e.target.value; const box = $('orgl'); if (box) box.innerHTML = orgListHtml(); return true;
+}
+Object.assign(A, {
+  orgOpen: () => guard(async () => { const [orgs, dir] = await Promise.all([rest('org_units', 'select=id,name,parent_id,head_id,head_title,sort'), rest('directory', 'select=id,name,org_id,status')]); S.orgs = orgs; S.people = dir; S.orgq = ''; S.sheet = null; push('orgchart'); }),
+  orgDetail: (e) => push('orgdetail', { id: e.id }),
+});
+
 document.addEventListener('click', (e) => {
   if (e.target.closest('[data-stop]') && !e.target.closest('[data-a]')) return;
   const el = e.target.closest('[data-a]');
@@ -1985,6 +2031,7 @@ document.addEventListener('click', (e) => {
 document.addEventListener('change', (e) => { const el = e.target.closest && e.target.closest('[data-c]'); if (el && C[el.dataset.c]) C[el.dataset.c](el); });
 document.addEventListener('input', (e) => {
   const i = e.target.dataset && e.target.dataset.i;
+  if (typeof extraInput === 'function' && extraInput(i, e)) return;
   if (i === 'reason') { S.draft.reason = e.target.value; const b = $('sendBtn'); if (b) b.disabled = !(S.draft.reason.trim() && S.draft.approverId) || S.busy; }
   if (i === 'sreason') { S.sdraft.reason = e.target.value; const b = $('sendBtnS'); if (b) b.disabled = !(Object.keys(S.sdraft.items).length && S.sdraft.reason.trim() && S.sdraft.approverId) || S.busy; }
   if (i === 'areason') { S.adraft.reason = e.target.value; const b = $('sendBtnA'); if (b) b.disabled = !attOk() || S.busy; }
