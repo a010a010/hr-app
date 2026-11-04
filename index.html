@@ -838,7 +838,7 @@ function errText(e) {
   if ((x = /^leave already exists on (.+)$/.exec(m))) return `${md(x[1])}에는 이미 휴가가 있습니다.`;
   if ((x = /^too many days \(max (\d+)\)$/.exec(m))) return `이 유형은 최대 ${x[1]}일까지 선택할 수 있습니다.`;
   if ((x = /^no schedule on (.+)$/.exec(m))) return `${md(x[1])}에는 삭제할 근무일정이 없습니다.`;
-  if (/^date out of range: /.test(m)) return '오늘부터 120일 이내의 날짜만 요청할 수 있습니다.';
+  if (/^date out of range: /.test(m)) return '62일 전부터 120일 뒤까지의 날짜만 요청할 수 있습니다.';
   if (/^date beyond current leave period/.test(m)) return '현재 연차 기간을 벗어난 날짜입니다.';
   if (/email rate limit|over_email_send_rate_limit/i.test(m)) return '확인 메일 발송 한도를 넘었습니다. 잠시(약 1시간) 뒤에 다시 시도하거나 관리자에게 알려 주세요.';
   if (/security purposes|over_request_rate_limit|too many requests/i.test(m)) return '요청이 너무 많습니다. 잠시 뒤에 다시 시도해 주세요.';
@@ -1220,7 +1220,7 @@ function signupsScreen() {
 function schedForm() {
   const d = S.sdraft, del = d.action === 'delete', keys = Object.keys(d.items).sort();
   const cells = gridDates(d.cal).map((date) => {
-    const other = +date.slice(5, 7) !== d.cal.m, past = date < S.today, far = date > addDays(S.today, 120), ex = (d.target ? S.schedT : S.sched)[date];
+    const other = +date.slice(5, 7) !== d.cal.m, past = date < addDays(S.today, -62), far = date > addDays(S.today, 120), ex = (d.target ? S.schedT : S.sched)[date];
     const dis = other || past || far || (del && !ex);
     const sel = d.picked.includes(date), inList = d.items[date] !== undefined;
     const cls = ['cell', other ? 'other' : '', date === S.today ? 'today' : '', sel ? 'sel' : '', (dayOfWeek(date) === 0 || isHoliday(date)) ? 'off' : '', past && !other ? 'past' : ''].join(' ');
@@ -1231,7 +1231,7 @@ function schedForm() {
   return { header: header({ back: true, title: d.target ? `일정 대리 등록 · ${person(d.target)?.name ?? ''}` : '근무일정 요청', right: `<button id="sendBtnS" class="btn" style="border:0;color:var(--primary);height:44px" data-a="sendSched" ${ready && !S.busy ? '' : 'disabled'}>보내기</button>` }), cls: 'narrow', body: `<div class="bleed">
     <div class="seg" style="margin:12px"><button class="${!del ? 'on' : ''}" data-a="schedAction" data-k="set">등록·변경</button><button class="${del ? 'on' : ''}" data-a="schedAction" data-k="delete">삭제</button></div>
     <div style="background:var(--card)">${monthNav(d.cal, 'sdraft')}${dowRow()}<div class="grid">${cells}</div></div>
-    <div class="foot muted small">${del ? '삭제할 날짜를 고르세요. ● 표시는 승인된 일정이 있는 날이에요.' : '날짜를 여러 개 고른 뒤 시간을 정하고 “적용”을 누르세요. ● 표시는 이미 승인된 일정이 있는 날이에요.'}</div>
+    <div class="foot muted small">${del ? '삭제할 날짜를 고르세요. ● 표시는 승인된 일정이 있는 날이에요.' : '날짜를 여러 개 고른 뒤 시간을 정하고 “적용”을 누르세요. ● 표시는 이미 승인된 일정이 있는 날이에요. 지난 일정도 62일 전까지 요청할 수 있어요(승인 필요).'}</div>
     <div class="btns" style="margin:0 12px"><button class="btn" data-a="schedAll" ${del ? 'disabled' : ''}>이 달 남은 평일 선택</button><button class="btn" data-a="schedClear">선택 해제</button></div>
     ${del ? '' : `<div class="field"><div class="pair"><label class="small muted">시작<input type="time" value="${d.start}" data-c="sd" data-f="start"></label><label class="small muted">종료<input type="time" value="${d.end}" data-c="sd" data-f="end"></label></div>
       ${okTimes ? '' : '<div class="small" style="color:var(--red);margin-top:8px" role="alert">종료 시각이 시작 시각보다 늦어야 합니다. (자정을 넘기는 근무는 아직 지원하지 않습니다)</div>'}</div>`}
@@ -1271,7 +1271,7 @@ function renderSheet() {
   }
   if (sh.k === 'approver' || sh.k === 'approverA' || sh.k === 'approverS') {
     const a = sh.k === 'approver' ? S.draft : sh.k === 'approverA' ? S.adraft : S.sdraft, list = a.approvers;
-    return wrap(`<div class="sh">승인권자를 선택하세요.</div>${!list ? spinner : list.map((c) => `<button class="si ${a.approverId === c.approver_id ? 'on' : ''}" data-a="setApprover" data-w="${sh.k}" data-id="${c.approver_id}"><span>${esc(c.name)}<div class="muted small">${esc(c.head_title ? `${c.head_title} · ${c.org_name}` : '')}</div></span><span>${a.approverId === c.approver_id ? '✓' : ''}</span></button>`).join('') || '<div class="empty">후보가 없습니다. 관리자에게 문의해 주세요.</div>'}`);
+    return wrap(`<div class="sh">승인권자를 선택하세요.</div>${!list ? spinner : list.map((c) => `<button class="si ${a.approverId === c.approver_id ? 'on' : ''}" data-a="setApprover" data-w="${sh.k}" data-id="${c.approver_id}"><span>${esc(c.name)}<div class="muted small">${esc(c.head_title ? `${c.head_title} · ${c.org_name}` : '')}</div></span><span>${a.approverId === c.approver_id ? '✓' : ''}</span></button>`).join('') || '<div class="empty">후보가 없습니다. 관리자에게 문의해 주세요.</div>'}${S.me.role === 'admin' && list && !list.some((c) => c.approver_id === S.me.id) ? '<div class="small" style="padding:12px 20px;color:var(--amber)">※ 관리자 본인도 선택할 수 있어야 하는데 목록에 없다면 DB 업데이트가 필요합니다. 관리자 메뉴 › 시스템 점검에서 확인하세요.</div>' : ''}`);
   }
   if (sh.k === 'day') {
     const d = sh.d, sc = S.sched[d], r = S.recs[d], lv = S.lv[d] || [], seen = new Set();
@@ -1652,6 +1652,7 @@ const ADM_LOAD = {
     S.adm.sites = sites; S.adm.exempt = new Set(ex.map((x) => x.user_id)); S.adm.people = people;
   },
   adminTheme: async () => { await loadSettingsFresh(); },
+  adminStatus: async () => { S.adm.status = undefined; try { S.adm.status = await rpc('system_status'); } catch (e) { S.adm.status = null; } },
   adminCompany: async () => { await loadSettingsFresh(); S.orgs = await rest('org_units', 'select=id,name,parent_id,head_id,head_title,sort'); },
   adminAudit: async () => { S.adm.audit = await rest('audit_log', 'select=*&order=id.desc&limit=100'); },
   adminReport: async () => { S.adm.rep = S.adm.rep || { y: +S.today.slice(0, 4), m: +S.today.slice(5, 7) }; await buildReport(); },
@@ -1661,7 +1662,7 @@ const ADM_LOAD = {
 function adminHomePage() {
   const rows = [['signups', '가입 요청', `${signupCount()}건 대기`], ['adminPeople', '직원 관리', '소속·권한·상태, 연차, 일정 대리 등록'], ['adminOrgs', '조직 관리', '부서·팀 이름, 조직도, 조직장'], ['adminCompany', '회사 정보', '회사명, 최상위 조직 이름'],
     ['adminTypes', '휴가 유형', '유형·그룹, 연차 차감, 승인 범위'], ['adminHolidays', '공휴일', '대체공휴일 포함'], ['adminRules', '근무·출근·연차 규칙', '휴게, 출근 허용 시간, 연차 기준, 승인 정책'],
-    ['adminGeo', '위치 제한', '근무지, 반경, 제외 대상'], ['adminTheme', '화면 테마', '회사 기본 색상 테마'], ['adminReport', '월 근태 집계 · CSV', '급여 정산용'], ['adminAudit', '변경 이력', '누가 무엇을 바꿨는지']];
+    ['adminGeo', '위치 제한', '근무지, 반경, 제외 대상'], ['adminStatus', '시스템 점검', '어떤 DB 업데이트(SQL)가 적용됐는지 확인'], ['adminTheme', '화면 테마', '회사 기본 색상 테마'], ['adminReport', '월 근태 집계 · CSV', '급여 정산용'], ['adminAudit', '변경 이력', '누가 무엇을 바꿨는지']];
   return { header: header({ back: true, title: '관리자 메뉴' }), cls: 'narrow', body: `<div class="card flush">${rows.map(([k, t, sub]) => `<button class="rowbtn" style="border-top:1px solid var(--line)" data-a="${k === 'signups' ? 'signups' : 'go'}" data-k="${k}"><div><div>${t}</div><div class="muted small" style="font-weight:400">${sub}</div></div><span class="chev">${ico('chev')}</span></button>`).join('')}</div>` };
 }
 
@@ -1866,6 +1867,25 @@ function adminAuditPage() {
   return { header: header({ back: true, title: '변경 이력' }), cls: 'narrow', body: `<div class="card flush">${rows.map((a) => `<div class="kv" style="padding:10px 16px;border-top:1px solid var(--line)"><span><b>${esc(TB[a.table_name] || a.table_name)}</b> ${OP[a.op] || a.op}<div class="muted small">${a.actor ? esc((person(a.actor) || {}).name || '사용자') : 'DB 직접 변경'}</div></span><span class="muted small">${kst(a.at)}</span></div>`).join('') || '<div class="empty">기록이 없습니다.</div>'}</div><div class="demo">최근 100건만 보여 줍니다.</div>` };
 }
 
+/* ----- 시스템 점검 (적용된 DB 업데이트 확인) ----- */
+const STATUS_ITEMS = [
+  ['s07', '근무일정 · 출근 규칙', 'SQL 07'], ['s08', '휴가 취소 요청 · 일정 대리 등록 · 마지막 관리자 보호', 'SQL 08'],
+  ['s09_candidates', '관리자 본인을 승인권자로 선택', 'SQL 14'], ['s09_checks', '본인 승인 제약 해제', 'SQL 14'], ['s09_decide', '본인 요청 승인 처리', 'SQL 14'],
+  ['s10', '팀 스케줄 (권한 묶음 포함)', 'SQL 10'], ['s11', '개인 설정 저장 (선택한 사람 기억)', 'SQL 11'], ['s13', '지난 일정 요청', 'SQL 14'],
+];
+function adminStatusPage() {
+  const st = S.adm.status;
+  let body;
+  if (st === undefined) body = spinner;
+  else if (!st) body = '<div class="card"><b>점검 기능이 아직 설치되지 않았습니다.</b><div class="muted small" style="margin-top:6px">SQL 14번을 한 번 실행하면 설치되고, 그 뒤로는 이 화면에서 적용 상태를 볼 수 있습니다.</div><div class="btns"><button class="btn" data-a="statusReload">다시 확인</button></div></div>';
+  else {
+    const bad = STATUS_ITEMS.filter(([k]) => !st[k]);
+    body = `<div class="card"><b>${bad.length ? `${bad.length}개 항목이 적용되지 않았습니다.` : '모든 업데이트가 적용되어 있습니다.'}</b>${bad.length ? '<div class="muted small" style="margin-top:6px">SQL 14번을 한 번 실행하면 SQL 14 표시 항목이 모두 적용됩니다. 07, 08, 10, 11은 해당 번호의 SQL을 실행하세요.</div>' : ''}<div class="btns"><button class="btn" data-a="statusReload">다시 확인</button></div></div>
+      <div class="card flush">${STATUS_ITEMS.map(([k, l, sql]) => `<div class="kv" style="padding:14px 16px;border-top:1px solid var(--line)"><span>${esc(l)}</span><span>${st[k] ? '<span class="chip ok">적용됨</span>' : `<span class="chip no">적용 필요</span> <span class="muted small">${sql}</span>`}</span></div>`).join('')}</div>`;
+  }
+  return { header: header({ back: true, title: '시스템 점검' }), cls: 'narrow', body };
+}
+
 /* ----- 회사 정보 (회사명) ----- */
 function adminCompanyPage() {
   const root = S.orgs.find((o) => !o.parent_id);
@@ -1888,7 +1908,7 @@ function pwPage() {
   return { header: header({ back: true, title: '비밀번호 변경' }), cls: 'narrow', body: `${fld('pw-new', '새 비밀번호 (8자 이상)', txt('pw-new', '', 'password', 'autocomplete="new-password"'))}${fld('pw-new2', '새 비밀번호 확인', txt('pw-new2', '', 'password', 'autocomplete="new-password"'))}<div class="btns"><button class="btn primary block" data-a="changePw">변경</button></div><div class="demo">비밀번호를 잊어버렸다면 관리자에게 Supabase에서 재설정을 요청하세요. (이메일 재설정은 메일 발송 설정이 필요합니다.)</div>` };
 }
 
-Object.assign(PAGES, { admin: adminHomePage, adminPeople: adminPeoplePage, adminPerson: adminPersonPage, adminOrgs: adminOrgsPage, adminOrg: adminOrgPage, adminTypes: adminTypesPage, adminType: adminTypePage, adminHolidays: adminHolidaysPage, adminRules: adminRulesPage, adminGeo: adminGeoPage, adminSite: adminSitePage, adminReport: adminReportPage, adminAudit: adminAuditPage, pw: pwPage, adminTheme: adminThemePage, adminCompany: adminCompanyPage });
+Object.assign(PAGES, { admin: adminHomePage, adminPeople: adminPeoplePage, adminPerson: adminPersonPage, adminOrgs: adminOrgsPage, adminOrg: adminOrgPage, adminTypes: adminTypesPage, adminType: adminTypePage, adminHolidays: adminHolidaysPage, adminRules: adminRulesPage, adminGeo: adminGeoPage, adminSite: adminSitePage, adminReport: adminReportPage, adminAudit: adminAuditPage, pw: pwPage, adminTheme: adminThemePage, adminCompany: adminCompanyPage, adminStatus: adminStatusPage });
 
 /* ----- 동작 ----- */
 const need = () => { if (!isAdmin()) throw new ApiError(403, { message: 'forbidden' }); };
@@ -2008,6 +2028,7 @@ Object.assign(A, {
     if (isOn('co-root') && root && root.name !== name) { await send('PATCH', 'org_units', `id=eq.${root.id}`, { name }); root.name = name; }
     syncCompany(); render(); toast('저장했습니다.');
   }),
+  statusReload: () => guard(async () => { await ADM_LOAD.adminStatus(); render(); }),
   saveGeo: () => guard(async () => {
     need(); const rad = Number(val('gf-rad')), acc = Number(val('gf-acc')); if (!(rad >= 10) || !(acc >= 10)) return toast('반경과 오차는 10m 이상으로 입력해 주세요.');
     await saveSetting('geofence', { enabled: isOn('gf-on'), radius_m: Math.round(rad), max_accuracy_m: Math.round(acc), apply_in: isOn('gf-in'), apply_out: isOn('gf-out') }); render(); toast('저장했습니다.');
@@ -2648,8 +2669,8 @@ function reportDesk() {
 DESK.pages.report = reportDesk;
 
 /* ----- 관리자: 왼쪽 메뉴가 있는 관리 화면 ----- */
-const ADMIN_NAV = [['signups', '가입 요청'], ['adminPeople', '직원 관리'], ['adminOrgs', '조직 관리'], ['adminCompany', '회사 정보'], ['adminTypes', '휴가 유형'], ['adminHolidays', '공휴일'], ['adminRules', '근무·출근·연차 규칙'], ['adminGeo', '위치 제한'], ['adminTheme', '화면 테마'], ['adminReport', '월 근태 집계 · CSV'], ['adminAudit', '변경 이력']];
-const ADMIN_GROUP = { admin: null, signups: 'signups', adminPeople: 'adminPeople', adminPerson: 'adminPeople', adminOrgs: 'adminOrgs', adminOrg: 'adminOrgs', adminCompany: 'adminCompany', adminTypes: 'adminTypes', adminType: 'adminTypes', adminHolidays: 'adminHolidays', adminRules: 'adminRules', adminGeo: 'adminGeo', adminSite: 'adminGeo', adminTheme: 'adminTheme', adminReport: 'adminReport', adminAudit: 'adminAudit' };
+const ADMIN_NAV = [['signups', '가입 요청'], ['adminPeople', '직원 관리'], ['adminOrgs', '조직 관리'], ['adminCompany', '회사 정보'], ['adminTypes', '휴가 유형'], ['adminHolidays', '공휴일'], ['adminRules', '근무·출근·연차 규칙'], ['adminGeo', '위치 제한'], ['adminTheme', '화면 테마'], ['adminStatus', '시스템 점검'], ['adminReport', '월 근태 집계 · CSV'], ['adminAudit', '변경 이력']];
+const ADMIN_GROUP = { admin: null, signups: 'signups', adminPeople: 'adminPeople', adminPerson: 'adminPeople', adminOrgs: 'adminOrgs', adminOrg: 'adminOrgs', adminCompany: 'adminCompany', adminTypes: 'adminTypes', adminType: 'adminTypes', adminHolidays: 'adminHolidays', adminRules: 'adminRules', adminGeo: 'adminGeo', adminSite: 'adminGeo', adminTheme: 'adminTheme', adminStatus: 'adminStatus', adminReport: 'adminReport', adminAudit: 'adminAudit' };
 DESK.wrap = function (top, inner) {
   if (!top || !(top.name in ADMIN_GROUP) || !isAdmin()) return inner === undefined ? false : inner;
   if (inner === undefined) return true;
