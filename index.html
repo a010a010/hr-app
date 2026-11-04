@@ -463,6 +463,16 @@ label.pkrow{cursor:pointer}
   .pop,.pop.pf{position:fixed;left:8px;right:8px;top:auto;bottom:8px;width:auto;max-width:none;max-height:82vh;border-radius:14px}
   .popbd{background:var(--dim)}
 }
+
+/* 요청 상세: 승인·반려 버튼을 위쪽에 붙여 둔다 */
+.actbar{position:sticky;top:calc(56px + env(safe-area-inset-top,0px));z-index:8;background:var(--card);margin:12px -16px 4px;padding:0 16px;border-bottom:1px solid var(--line)}
+.actbar .btns{margin:10px 0}
+.actbar .btns+.btns{margin-top:0}
+@media (min-width:900px){
+  .actbar{top:116px}
+  .dside{max-height:calc(100vh - 92px);overflow:auto;border-radius:6px}
+  .dside .actbar{top:0}
+}
 </style>
 </head>
 <body>
@@ -472,7 +482,7 @@ label.pkrow{cursor:pointer}
 <script>
 /* 공개용 설정: Project URL과 publishable(anon) 키만 넣는다. secret/service_role 키와 DB 비밀번호는 절대 넣지 않는다. */
 window.APP_CONFIG = { url: 'https://zqfvntplsqftbkfewqsk.supabase.co', key: 'sb_publishable_bXeTU9omjAxUzUijyNzEkg_JmrTo-8v' };
-window.APP_BUILD = '2026-11-04 14:51';
+window.APP_BUILD = '2026-11-04 15:00';
 </script>
 <script>
 /* ---- dates.js ---- */
@@ -1128,17 +1138,21 @@ function requestDetail(p) {
        <div class="kv"><b>변경 전</b><span>${r.before ? rec(r.before.clock_in, r.before.clock_out) : '기록 없음'}</span></div>
        <div class="kv"><b>변경 후</b><span>${r.action === 'delete' ? '기록 삭제' : rec(r.clock_in, r.clock_out)}</span></div>`
     : `<div class="kv"><b>날짜</b><span style="text-align:right">${r.dates.map((d) => `${md(d)} (${DOW[dayOfWeek(d)]})`).join('<br>')}</span></div>`;
+  const canCancelDecide = r.kind === 'leave' && r.cancel_requested && r.status === 'approved' && r.approver_id === S.me.id && (!mineReq || S.me.role === 'admin');
+  const rowsBtn = [
+    canCancelDecide ? `<div class="btns"><button class="btn danger" data-a="decideCancel" data-id="${r.id}" data-v="rejected">취소 거절</button><button class="btn primary" data-a="decideCancel" data-id="${r.id}" data-v="approved">취소 승인</button></div>` : '',
+    canDecide ? `<div class="btns"><button class="btn danger" data-a="decide" data-k="${r.kind}" data-id="${r.id}" data-v="rejected">반려</button><button class="btn primary" data-a="decide" data-k="${r.kind}" data-id="${r.id}" data-v="approved">승인</button></div>` : '',
+    mineReq && r.status === 'pending' ? `<div class="btns"><button class="btn danger block" data-a="cancel" data-k="${r.kind}" data-id="${r.id}">요청 취소</button></div>` : '',
+  ].filter(Boolean).join('');
+  const actbar = rowsBtn ? `<div class="actbar">${rowsBtn}</div>` : '';      // 승인·반려 등 처리 버튼은 맨 위에 두고, 스크롤해도 화면 위쪽에 붙어 있게 한다
+  const cancelForm = r.kind === 'leave' && mineReq && r.status === 'approved' && !r.cancel_requested && r.dates[0] > S.today ? `<div class="field"><label for="lc-reason">휴가 취소 요청 사유</label><input id="lc-reason" type="text" maxlength="200"></div><div class="btns"><button class="btn danger block" data-a="reqCancelLeave" data-id="${r.id}">휴가 취소 요청</button></div>` : '';
   return { header: header({ back: true, title: '요청 상세' }), cls: 'narrow', body: `<div class="card"><span class="chip ${badge(r.status)}">${statusKo[r.status]}</span>
-    ${r.cancel_requested ? ' <span class="chip wait">취소 요청 중</span>' : ''}<h2 style="margin-top:10px">${esc(reqTitle(r))}</h2>
+    ${r.cancel_requested ? ' <span class="chip wait">취소 요청 중</span>' : ''}<h2 style="margin-top:10px">${esc(reqTitle(r))}</h2>${actbar}${cancelForm}
     <div class="kv"><b>신청자</b><span>${esc(person(r.user_id)?.name ?? '')}</span></div>${rows}
     <div class="kv"><b>승인권자</b><span>${esc(person(r.approver_id)?.name ?? '')}</span></div>
     <div class="kv"><b>사유</b><span style="text-align:right;max-width:60%">${esc(r.reason)}</span></div>
     ${r.comment ? `<div class="kv"><b>의견</b><span>${esc(r.comment)}</span></div>` : ''}
-    ${r.cancel_requested ? `<div class="kv"><b>취소 요청</b><span style="text-align:right;max-width:60%">${esc(r.cancel_reason || '')}</span></div>` : ''}
-    ${r.kind === 'leave' && r.cancel_requested && r.status === 'approved' && r.approver_id === S.me.id && (!mineReq || S.me.role === 'admin') ? `<div class="btns"><button class="btn danger" data-a="decideCancel" data-id="${r.id}" data-v="rejected">취소 거절</button><button class="btn primary" data-a="decideCancel" data-id="${r.id}" data-v="approved">취소 승인</button></div>` : ''}
-    ${r.kind === 'leave' && mineReq && r.status === 'approved' && !r.cancel_requested && r.dates[0] > S.today ? `<div class="field"><label for="lc-reason">휴가 취소 요청 사유</label><input id="lc-reason" type="text" maxlength="200"></div><div class="btns"><button class="btn danger block" data-a="reqCancelLeave" data-id="${r.id}">휴가 취소 요청</button></div>` : ''}
-    ${canDecide ? `<div class="btns"><button class="btn danger" data-a="decide" data-k="${r.kind}" data-id="${r.id}" data-v="rejected">반려</button><button class="btn primary" data-a="decide" data-k="${r.kind}" data-id="${r.id}" data-v="approved">승인</button></div>` : ''}
-    ${mineReq && r.status === 'pending' ? `<div class="btns"><button class="btn danger block" data-a="cancel" data-k="${r.kind}" data-id="${r.id}">요청 취소</button></div>` : ''}</div>` };
+    ${r.cancel_requested ? `<div class="kv"><b>취소 요청</b><span style="text-align:right;max-width:60%">${esc(r.cancel_reason || '')}</span></div>` : ''}</div>` };
 }
 
 /* ---------- 화면: 휴가 신청 ---------- */
