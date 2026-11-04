@@ -198,8 +198,9 @@ button.mcell:focus-visible{outline:2px solid var(--primary);outline-offset:-2px}
   .tabbar,.menu-btn,.hdr .logo{display:none}
   .onlydesk{display:block}
   .hdr{padding:0 24px;top:60px}
-  .main{max-width:1120px;margin:0 auto;padding:24px 28px 48px}
-  .main.narrow{max-width:680px}
+  .main{max-width:none;margin:0;padding:24px 32px 56px}
+  .main.narrow{max-width:820px}
+  .content:has(.main.desk)>.hdr{display:none}
   .main.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px;align-items:start}
   .main.grid2>.span2,.main.grid2>.demo{grid-column:1/-1}
   .bleed{margin:0}
@@ -257,7 +258,7 @@ button.kvr{cursor:pointer}.kvr b{font-weight:700}.kvr span{display:inline-flex;a
 .grow{display:flex;justify-content:space-between;gap:12px;background:var(--card);padding:16px;border-bottom:1px solid var(--line)}
 .grow .muted{margin-top:6px;font-size:15px}.grow .r{display:flex;align-items:center;gap:8px;white-space:nowrap}
 .rrow{display:flex;align-items:center;justify-content:space-between;width:100%;padding:18px 16px;border:0;border-bottom:1px solid var(--line);font:inherit;color:inherit;font-size:17px;text-align:left}
-button.rrow{cursor:pointer}.rrow span{display:inline-flex;align-items:center;gap:6px}
+button.rrow{cursor:pointer}.rrow span{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .repnote{padding:16px;line-height:1.7;border-bottom:1px solid var(--line);background:var(--bg)}
 .ib.sm{width:36px;height:36px}
 .rowhd{display:flex;align-items:center;justify-content:space-between}
@@ -347,6 +348,90 @@ button.rrow{cursor:pointer}.rrow span{display:inline-flex;align-items:center;gap
 .themegrid.sm .themecard{padding:10px;gap:6px}
 .themegrid.sm .swatch{height:24px}
 .themegrid.sm .muted{display:none}
+
+/* PC 전용 화면 */
+.dtool{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 16px}
+.dtool h2{margin:0;font-size:24px}
+.dgrid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px;align-items:stretch}
+.dgrid .c4{grid-column:span 4}.dgrid .c5{grid-column:span 5}.dgrid .c7{grid-column:span 7}.dgrid .c12{grid-column:1/-1}
+.dgrid>div>.panel{height:100%}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.panel .ph{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 20px;border-bottom:1px solid var(--line);min-height:56px}
+.panel .ph h3{margin:0;font-size:16px}
+.panel .pb{padding:16px 20px}
+.panel .pb.flush{padding:0}
+.dgrid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.dday{font-size:22px;font-weight:700;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.dkv{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+.dkv:last-child{border-bottom:0}
+.dkv>span{color:var(--muted)}
+.dkv>b{font-weight:700;text-align:right}
+.dbig{font-size:44px;font-weight:700;color:var(--teal);line-height:1.1;margin:2px 0 10px}
+.dbig span{font-size:16px;font-weight:500;color:var(--muted);margin-left:6px}
+.dsub{font-weight:700;margin:0 0 6px;font-size:14px}
+.dweek{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
+.dtile{background:var(--off);border-radius:8px;text-align:center;padding:10px 4px;font-size:14px;min-height:92px}
+.dtile.today{background:var(--today);outline:2px solid var(--primary)}
+.dtile .d{font-weight:700;margin-bottom:6px}
+.dtile .d.sun{color:var(--red)}
+.drow2{display:flex;align-items:center;gap:12px;width:100%;border:0;background:none;padding:11px 4px;border-bottom:1px solid var(--line);text-align:left;font:inherit;color:inherit;cursor:pointer}
+.drow2:last-child{border-bottom:0}
+.drow2>span:first-child{flex:1}
+.dsplit{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(360px,.9fr);gap:16px;align-items:start}
+.dside{position:sticky;top:76px}
+.dlist{max-height:calc(100vh - 230px);overflow:auto}
+.drow{display:grid;grid-template-columns:96px 1fr 150px 92px;gap:12px;align-items:center;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:var(--card);padding:14px 20px;font:inherit;color:inherit;cursor:pointer}
+.drow:hover{background:var(--off)}
+.drow.on{background:var(--today)}
+.drow .t{display:flex;flex-direction:column;gap:2px;min-width:0}
+.drow .k{color:var(--muted);font-size:13px}
+.dsplit2{display:grid;grid-template-columns:380px minmax(0,1fr);gap:16px;align-items:start}
+.dstack{display:flex;flex-direction:column;gap:16px}
+.dtbar{margin:0 0 14px}
+.dtbar .calhd{justify-content:flex-start;gap:12px;background:none;border:0;padding:0}
+.dtable{width:100%;border-collapse:collapse;font-size:14px}
+.dtable th{text-align:left;color:var(--muted);font-weight:500;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--off)}
+.dtable td{padding:12px 20px;border-bottom:1px solid var(--line)}
+.dtable td.g{color:var(--teal);font-weight:700}
+.dtable td.empty,.dtable td .empty{text-align:center;color:var(--muted)}
+.dtable.clk tbody tr{cursor:pointer}
+.dtable.clk tbody tr:hover{background:var(--off)}
+.panel .pb:not(.flush) .dtable th,.panel .pb:not(.flush) .dtable td{padding:10px 8px}
+.adminshell{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:calc(100vh - 60px)}
+.adminnav{background:var(--card);border-right:1px solid var(--line);padding:20px 12px;position:sticky;top:60px;height:calc(100vh - 60px);overflow:auto;display:flex;flex-direction:column;gap:2px}
+.adminnav .at{padding:0 8px 12px}
+.adminnav button{display:flex;align-items:center;justify-content:space-between;width:100%;text-align:left;padding:11px 14px;border:0;background:none;border-radius:8px;font-size:15px;color:var(--text)}
+.adminnav button:hover{background:var(--off)}
+.adminnav button.on{background:var(--today);color:var(--primary);font-weight:700}
+.adminnav button:focus-visible{outline:2px solid var(--primary);outline-offset:-2px}
+.adminnav .badge{position:static}
+.chip.adm{background:#e8710a;color:#fff}
+.adminbody{min-width:0}
+.adminbody .main.narrow{max-width:1120px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px;align-content:start}
+.adminbody .main.narrow>*{grid-column:1/-1}
+.adminbody .main.narrow>.field{grid-column:auto}
+
+/* 팀 필터 (조직 트리 + 사람 선택) */
+.sheet.tf{max-width:560px;display:flex;flex-direction:column;overflow:hidden}
+.tfbar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:0 0 8px}
+.tfbar .tfq{display:flex;gap:6px;flex-wrap:wrap}
+.tfopt{display:flex;gap:18px;margin:6px 0 4px;font-size:14px}
+.tfopt label{display:flex;gap:8px;align-items:center}
+.tflist{flex:1;min-height:120px;max-height:46vh;overflow:auto;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.tfr{display:flex;align-items:center;gap:8px;padding-top:7px;padding-bottom:7px;padding-right:12px;font-size:15px}
+.tfr.org{font-weight:700;background:var(--off)}
+.tfr.org .n{flex:0 1 auto}
+.tfr.org .small{margin-left:auto}
+.tfx{border:0;background:none;width:24px;height:24px;color:var(--muted);padding:0;font-size:13px}
+.tfr .tdot{display:inline-block;width:9px;height:9px;border-radius:50%;flex:none}
+.cbgap{width:20px;flex:none}
+.cbx{width:20px;height:20px;border:2px solid var(--muted);border-radius:4px;background:var(--card);position:relative;padding:0;flex:none}
+.cbx.on,.cbx.part{background:var(--primary);border-color:var(--primary)}
+.cbx.on::after{content:'';position:absolute;left:5px;top:1px;width:5px;height:10px;border:solid var(--primary-ink);border-width:0 2px 2px 0;transform:rotate(45deg)}
+.cbx.part::after{content:'';position:absolute;left:3px;top:7px;width:10px;height:2px;background:var(--primary-ink)}
+.cbx:focus-visible,.tfx:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.orgmem{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.mchip{background:var(--today);color:var(--primary);border-radius:12px;padding:2px 10px;font-size:13px}
 </style>
 </head>
 <body>
@@ -838,7 +923,7 @@ async function loadLeave() {
 }
 async function refreshAll() {
   S.loaded = new Set();
-  await Promise.all([loadHomeData(), loadRequests(), loadLeave(), loadLeaveX()]);
+  await Promise.all([loadHomeData(), loadRequests(), loadLeave(), loadLeaveX(), loadDeskExtras()]);
 }
 
 /* ---------- 화면 조각 ---------- */
@@ -1212,12 +1297,14 @@ function authScreen() {
 }
 
 /* ---------- 렌더 ---------- */
+const DESK = { tabs: {}, pages: {}, wrap: null };
 function render() {
   if (!['main'].includes(S.view)) { $('app').innerHTML = authScreen(); $('sheet').innerHTML = ''; $('toast').innerHTML = S.toast ? `<div class="toast" role="status">${esc(S.toast)}</div>` : ''; return; }
   const top = S.stack[S.stack.length - 1];
-  const scr = top ? PAGES[top.name](top) : TABS[S.tab]();
+  const desk = typeof isDesk === 'function' && isDesk();
+  const scr = top ? ((desk && DESK.pages[top.name]) || PAGES[top.name])(top) : ((desk && DESK.tabs[S.tab]) || TABS[S.tab])();
   const err = S.loadError ? `<div class="card" style="color:var(--red)" role="alert">${esc(S.loadError)} <button class="btn" data-a="reload" style="height:36px">다시 시도</button></div>` : '';
-  $('app').innerHTML = `<div class="app"><div class="shell">${sidebar()}<div class="content">${scr.header}<main class="main ${scr.cls || ''}">${err}${scr.body}</main></div></div>${tabbar()}</div>`;
+  $('app').innerHTML = `<div class="app"><div class="shell">${sidebar()}<div class="content">${scr.header}${desk && DESK.wrap && DESK.wrap(top) ? DESK.wrap(top, `<main class="main ${scr.cls || ''}">${err}${scr.body}</main>`) : `<main class="main ${scr.cls || ''}">${err}${scr.body}</main>`}</div></div>${tabbar()}</div>`;
   $('sheet').innerHTML = renderSheet();
   $('toast').innerHTML = S.toast ? `<div class="toast" role="status">${esc(S.toast)}</div>` : '';
 }
@@ -1247,7 +1334,7 @@ async function bootMain() {
     const ok = await loadStatic();
     if (!ok) { await loadSignupStatus(); S.view = 'noprofile'; render(); return; }
     S.view = 'main'; S.loadError = ''; render();
-    await Promise.all([loadHomeData(), loadRequests(), loadLeave()]);
+    await Promise.all([loadHomeData(), loadRequests(), loadLeave(), loadLeaveX(), loadDeskExtras()]);
   } catch (e) {
     if (e instanceof ApiError && e.status === 401) { await doLogout(true); return; }
     S.view = S.me ? 'main' : 'login';
@@ -1467,7 +1554,8 @@ async function tabLoad() {
   if (S.tab === 'records') { const [a, b] = gridRange(S.rec); await ensureRange(a, b); }
   if (S.tab === 'requests') await loadRequests();
   if (S.tab === 'team') await loadTeamAll();
-  if (S.tab === 'leave') { await Promise.all([loadLeave(), loadRequests(), loadLeaveX()]); }
+  if (S.tab === 'home' || S.tab === 'schedule') await loadDeskExtras();
+  if (S.tab === 'leave') { await Promise.all([loadLeave(), loadRequests(), loadLeaveX(), loadDeskExtras()]); }
   render();
 }
 const C = {
@@ -2079,16 +2167,23 @@ Object.assign(A, {
 
 /* ----- 조직도 (모든 직원) ----- */
 S.orgq = '';
+const orgKids = (pid) => S.orgs.filter((o) => (o.parent_id ?? null) === pid).sort((a, b) => ((a.sort ?? 0) - (b.sort ?? 0)) || a.name.localeCompare(b.name));
+const orgIdsUnder = (id) => { const out = [id]; const walk = (pid) => { for (const c of orgKids(pid)) { out.push(c.id); walk(c.id); } }; walk(id); return out; };
 function orgListHtml() {
   const q = (S.orgq || '').trim().toLowerCase(), people = S.people.filter((x) => x.status === 'active');
-  const members = (id) => people.filter((x) => x.org_id === id);
-  const rows = orgRows().map(({ o, depth }) => {
-    const ms = members(o.id), hit = q ? ms.filter((x) => x.name.toLowerCase().includes(q)) : [];
-    return { o, depth, ms, hit, show: !q || o.name.toLowerCase().includes(q) || hit.length > 0 };
-  }).filter((r) => r.show);
-  return rows.map(({ o, depth, ms, hit }) => {
-    const head = people.find((x) => x.id === o.head_id);
-    return `<button class="orgrow" style="padding-left:${16 + depth * 24}px" data-a="orgDetail" data-id="${o.id}"><div><div class="orgn">${depth ? '<span class="muted">└ </span>' : ''}${esc(o.name)}</div><div class="muted small">${esc(o.head_title)}: ${head ? esc(head.name) : '공석'} · ${ms.length}명${hit.length ? ` · <b>${hit.map((x) => esc(x.name)).join(', ')}</b>` : ''}</div></div><span class="chev">${ico('chev')}</span></button>`;
+  const direct = (id) => people.filter((x) => x.org_id === id);
+  const full = new Set(), part = new Map();
+  if (q) {
+    for (const o of S.orgs) if (o.name.toLowerCase().includes(q)) orgIdsUnder(o.id).forEach((id) => full.add(id));      // 조직 이름이 맞으면 그 아래 전부
+    for (const o of S.orgs) { const hit = direct(o.id).filter((x) => x.name.toLowerCase().includes(q)); if (hit.length) part.set(o.id, hit); }
+  }
+  const show = new Set([...full, ...part.keys()]);
+  if (q) for (const id of [...show]) { let c = S.orgs.find((o) => o.id === id); while (c && c.parent_id) { show.add(c.parent_id); c = S.orgs.find((o) => o.id === c.parent_id); } }
+  const rows = orgRows().filter(({ o }) => !q || show.has(o.id));
+  return rows.map(({ o, depth }) => {
+    const head = people.find((x) => x.id === o.head_id), total = orgIdsUnder(o.id).reduce((n, id) => n + direct(id).length, 0);
+    const shown = !q ? [] : full.has(o.id) ? direct(o.id) : (part.get(o.id) || []);
+    return `<button class="orgrow" style="padding-left:${16 + depth * 24}px" data-a="orgDetail" data-id="${o.id}"><div style="min-width:0"><div class="orgn">${depth ? '<span class="muted">└ </span>' : ''}${esc(o.name)}</div><div class="muted small">${esc(o.head_title)}: ${head ? esc(head.name) : '공석'} · ${total}명${o.id === S.orgSel ? '' : ''}</div>${shown.length ? `<div class="orgmem">${shown.map((x) => `<span class="mchip">${esc(x.name)}</span>`).join('')}</div>` : ''}</div><span class="chev">${ico('chev')}</span></button>`;
   }).join('') || '<div class="empty">검색 결과가 없습니다.</div>';
 }
 function orgChartPage() {
@@ -2107,6 +2202,7 @@ function orgDetailPage(p) {
 }
 PAGES.orgchart = orgChartPage; PAGES.orgdetail = orgDetailPage;
 function extraInput(i, e) {
+  if (i === 'tfq') { S.team.q = e.target.value; const box = $('tflist'); if (box) box.innerHTML = tfListHtml(); return true; }
   if (i !== 'orgq') return false;
   S.orgq = e.target.value; const box = $('orgl'); if (box) box.innerHTML = orgListHtml(); return true;
 }
@@ -2157,18 +2253,42 @@ const hashStr = (v) => { let h = 0; for (const c of String(v)) h = (h * 31 + c.c
 const pcolor = (id) => TPAL[hashStr(id) % TPAL.length];
 const isDesk = () => typeof window !== 'undefined' && window.innerWidth >= 900;
 const fmtHM = (m) => { m = Math.round(m); if (m <= 0) return '0m'; const h = Math.floor(m / 60), r = m % 60; return h ? `${h}h${r ? ` ${r}m` : ''}` : `${r}m`; };
-function newTeamState() { return { view: null, day: null, y: null, m: null, from: null, to: null, rows: null, people: [], sel: null, org: 'all', showWork: true, showLeave: true, rng: null, fix: false, statDate: null }; }
+function newTeamState() { return { view: null, day: null, y: null, m: null, from: null, to: null, rows: null, people: [], sel: null, org: 'all', showWork: true, showLeave: true, rng: null, fix: false, statDate: null, q: '', open: new Set() }; }
 S.team = newTeamState();
 
 async function loadTeam() {
   const T = S.team;
   if (!T.day) { T.day = S.today; T.y = +S.today.slice(0, 4); T.m = +S.today.slice(5, 7); }
-  if (!T.view) T.view = isDesk() ? 'month' : 'day';
+  if (!T.view) { const sv = lsGet('hr_team_view'); T.view = ['day', 'week', 'month'].includes(sv) ? sv : (isDesk() ? 'month' : 'day'); }
   const [a, b] = gridRange({ y: T.y, m: T.m });
   const rows = await rpc('team_schedule', { p_from: a, p_to: b });
   T.from = a; T.to = b; T.rows = rows;
   T.people = rows.filter((r) => r.kind === 'person').map((r) => ({ id: r.user_id, name: r.name, org_id: r.org_id })).sort((x, y) => x.name.localeCompare(y.name));
-  if (!T.sel) { const mine = T.people.filter((p) => p.org_id === S.me.org_id).map((p) => p.id); T.sel = new Set(mine.length >= 2 ? mine : T.people.slice(0, 15).map((p) => p.id)); }
+  if (!T.sel) {
+    const mine = T.people.filter((p) => p.org_id === S.me.org_id).map((p) => p.id), dflt = mine.length >= 2 ? mine : T.people.slice(0, 15).map((p) => p.id);
+    const v = await loadTeamPrefs(), visible = new Set(T.people.map((p) => p.id));
+    if (v && Array.isArray(v.sel)) {
+      const ids = v.sel.filter((id) => visible.has(id));
+      T.sel = new Set(ids.length || !v.sel.length ? ids : dflt);               // 저장한 사람이 모두 사라졌으면 기본값
+      if (typeof v.showWork === 'boolean') T.showWork = v.showWork;
+      if (typeof v.showLeave === 'boolean') T.showLeave = v.showLeave;
+    } else T.sel = new Set(dflt);
+    T.open = new Set(); for (let o = orgOf(S.me.org_id); o; o = o.parent_id ? orgOf(o.parent_id) : null) T.open.add(o.id);   // 내 조직까지 펼쳐 둔다
+  }
+}
+const TEAM_PREF = 'team_view';
+function teamPrefsValue() { const T = S.team; return { sel: [...T.sel], showWork: T.showWork, showLeave: T.showLeave }; }
+async function loadTeamPrefs() {
+  let v = null;
+  try { const rows = await rest('user_prefs', `select=value&user_id=eq.${S.me.id}&key=eq.${TEAM_PREF}`); if (rows.length) v = rows[0].value; } catch (e) { /* 표가 없으면 이 기기에 저장된 값을 쓴다 */ }
+  if (!v) { try { v = JSON.parse(lsGet(`hr_team_${S.me.id}`) || 'null'); } catch (e) { v = null; } }
+  return v;
+}
+let teamPrefTimer;
+function saveTeamPrefs(now) {
+  const v = teamPrefsValue(); lsSet(`hr_team_${S.me.id}`, JSON.stringify(v));
+  const push2 = () => send('POST', 'user_prefs', 'on_conflict=user_id,key', [{ user_id: S.me.id, key: TEAM_PREF, value: v, updated_at: new Date().toISOString() }], 'resolution=merge-duplicates').catch(() => { /* 표가 없으면 이 기기에만 저장 */ });
+  clearTimeout(teamPrefTimer); if (now) return push2(); teamPrefTimer = setTimeout(push2, 600); return undefined;
 }
 function teamRange() {
   const T = S.team;
@@ -2215,7 +2335,7 @@ function teamScreen() {
   if (!T.rows || !T.sel) return { header: header({ title: '스케줄' }), cls: 'wide', body: spinner };
   const view = T.view || 'month', { by, count } = teamEntries(T), today = S.today;
   const ws = weekStartOf(T.day), title = view === 'month' ? `${T.y} ${T.m}월` : view === 'week' ? `${md(ws)} - ${md(addDays(ws, 6))}` : kdate(T.day);
-  const nFilter = (T.showWork ? 1 : 0) + (T.showLeave ? 1 : 0) + (T.org !== 'all' ? 1 : 0);
+  const nFilter = (T.showWork ? 1 : 0) + (T.showLeave ? 1 : 0);
   const cell = (d, other) => { const es = by[d] || [], n = new Set(es.map((e) => e.user_id)).size; return `<button class="tcell ${other ? 'other' : ''}" data-a="teamDay" data-d="${d}" aria-label="${d}"><span class="tdn ${d === today ? 'today' : ''} ${dayOfWeek(d) === 0 || isHoliday(d) ? 'red' : ''}">${+d.slice(8, 10) === 1 ? `${+d.slice(5, 7)}/1` : +d.slice(8, 10)}</span>${es.map(tevHtml).join('')}${n ? `<span class="tcount">${n}명</span>` : ''}</button>`; };
   let cal;
   if (view === 'day') {
@@ -2227,11 +2347,38 @@ function teamScreen() {
   }
   const main = `<div class="tmain"><div class="tbar"><div class="tnav"><button class="ib sq" data-a="teamNav" data-n="-1" aria-label="이전">${ico('back')}</button><button class="ib sq" data-a="teamNav" data-n="1" aria-label="다음">${ico('chev')}</button><button class="btn sm" data-a="teamToday">오늘</button><h2 class="ttl">${title}</h2></div>
       <div class="tact"><button class="btn sm green" data-a="leaveNew">✈ 휴가 생성 요청</button><button class="btn sm blue" data-a="schedNew">근무일정 생성 요청</button><button class="btn sm line" data-a="schedNew">근무일정 수정 요청</button></div></div>
-    <div class="tbar2"><div class="l"><button class="btn sm" data-a="sheet" data-k="teamPeople">${count} 선택됨 ▾</button><button class="btn sm" data-a="sheet" data-k="teamFilter">필터 (${nFilter}) ▾</button></div>
+    <div class="tbar2"><div class="l"><button class="btn sm" data-a="sheet" data-k="teamFilter">${count} 선택됨 ▾</button><button class="btn sm" data-a="sheet" data-k="teamFilter">필터 (${nFilter}) ▾</button></div>
       <div class="seg3" role="group" aria-label="보기">${[['day', '일'], ['week', '주'], ['month', '월']].map(([k, l]) => `<button class="${view === k ? 'on' : ''}" data-a="teamView" data-k="${k}" aria-pressed="${view === k}">${l}</button>`).join('')}</div></div>${cal}</div>`;
   return { header: header({ title: '스케줄' }), cls: 'wide', body: `<div class="tgrid">${main}${teamSide(T)}</div>` };
 }
 TABS.team = teamScreen;
+
+/* ----- 팀 필터: 조직 트리 + 사람 선택 ----- */
+const cbx = (st, action, id) => `<button class="cbx ${st}" role="checkbox" aria-checked="${st === 'on' ? 'true' : st === 'part' ? 'mixed' : 'false'}" data-a="${action}" data-id="${id}"></button>`;
+function tfIds(orgId) {
+  const T = S.team, ids = orgId === '' ? [''] : orgIdsUnder(orgId);
+  return T.people.filter((p) => ids.includes(p.org_id || '')).map((p) => p.id);
+}
+function tfListHtml() {
+  const T = S.team, q = (T.q || '').trim().toLowerCase(), byOrg = {};
+  for (const p of T.people) (byOrg[p.org_id || ''] ||= []).push(p);
+  const build = (o, forced) => {
+    const self = !!q && o.name.toLowerCase().includes(q), full = !q || forced || self, direct = (byOrg[o.id] || []).filter((p) => full || p.name.toLowerCase().includes(q));
+    const ch = orgKids(o.id).map((c) => build(c, q ? (forced || self) : true)).filter(Boolean), ids = tfIds(o.id);
+    if (!ids.length || (q && !full && !direct.length && !ch.length)) return null;
+    return { o, direct, ch, ids, full };
+  };
+  const nodes = orgKids(null).map((o) => build(o, false)).filter(Boolean), loose = (byOrg[''] || []).filter((p) => !q || p.name.toLowerCase().includes(q));
+  if (loose.length) nodes.push({ o: { id: '', name: '소속 없음' }, direct: loose, ch: [], ids: (byOrg[''] || []).map((p) => p.id), full: true });
+  const state = (ids) => { const n = ids.filter((id) => T.sel.has(id)).length; return n === 0 ? 'off' : n === ids.length ? 'on' : 'part'; };
+  const row = (n, depth) => {
+    const open = q ? true : T.open.has(n.o.id);
+    let h = `<div class="tfr org" style="padding-left:${10 + depth * 18}px"><button class="tfx" data-a="teamOpen" data-id="${n.o.id}" aria-label="${open ? '접기' : '펼치기'}" aria-expanded="${open}">${open ? '▾' : '▸'}</button>${n.full ? cbx(state(n.ids), 'teamOrgToggle', n.o.id) : '<span class="cbgap"></span>'}<span class="n">${esc(n.o.name)}</span><span class="muted small">${n.ids.length}명</span></div>`;
+    if (open) { h += n.direct.map((p) => `<div class="tfr p" style="padding-left:${10 + (depth + 1) * 18 + 24}px">${cbx(T.sel.has(p.id) ? 'on' : 'off', 'teamPick', p.id)}<i class="tdot" style="background:${pcolor(p.id)}"></i><span>${esc(p.name)}</span></div>`).join(''); h += n.ch.map((c) => row(c, depth + 1)).join(''); }
+    return h;
+  };
+  return nodes.map((n) => row(n, 0)).join('') || '<div class="empty">검색 결과가 없습니다.</div>';
+}
 
 /* ----- 시트: 화면 테마 · 팀 선택 · 팀 필터 ----- */
 function extraSheet2(sh, wrap) {
@@ -2241,15 +2388,13 @@ function extraSheet2(sh, wrap) {
     return wrap(`<div class="sh" style="font-weight:700;color:var(--text)">화면 테마</div><div style="padding:0 16px 8px"><div class="muted small" style="margin-bottom:10px">내 기기에서만 적용됩니다. 회사 기본: ${esc((THEMES.find((t) => t.id === co) || THEMES[0]).name)}</div>
       <div class="themegrid sm">${themeCard({ id: 'company', name: '회사 기본값 따르기', desc: '관리자가 정한 테마', sw: (THEMES.find((t) => t.id === co) || THEMES[0]).sw }, !mine || !validTheme(mine), 'themeUser')}${THEMES.map((t) => themeCard(t, mine === t.id, 'themeUser')).join('')}</div></div>${close}`);
   }
-  if (sh.k === 'teamPeople') {
-    const T = S.team;
-    return wrap(`<div class="sh" style="font-weight:700;color:var(--text)">${T.sel.size}명 선택됨</div><div class="btns" style="margin:0 16px 8px"><button class="btn sm" data-a="teamAll">전체 선택</button><button class="btn sm" data-a="teamMine">내 조직</button><button class="btn sm" data-a="teamNone">모두 해제</button></div>
-      <div class="plist" style="max-height:48vh;overflow:auto">${T.people.map((p) => `<label class="si" style="gap:12px;justify-content:flex-start"><input type="checkbox" data-a="teamPick" data-id="${p.id}" ${T.sel.has(p.id) ? 'checked' : ''}><i style="width:10px;height:10px;border-radius:50%;background:${pcolor(p.id)};flex:none"></i><span>${esc(p.name)}</span><span class="muted small" style="margin-left:auto">${esc(orgOf(p.org_id)?.name ?? '')}</span></label>`).join('')}</div>${close}`);
-  }
   if (sh.k === 'teamFilter') {
-    const T = S.team, orgs = [...new Set(T.people.map((p) => p.org_id))].map((id) => orgOf(id)).filter(Boolean);
-    return wrap(`<div class="sh" style="font-weight:700;color:var(--text)">필터</div><div style="padding:0 20px 8px"><label style="display:flex;gap:10px;margin:8px 0"><input type="checkbox" data-a="teamToggle" data-k="showWork" ${T.showWork ? 'checked' : ''}> 근무일정 표시</label><label style="display:flex;gap:10px;margin:8px 0"><input type="checkbox" data-a="teamToggle" data-k="showLeave" ${T.showLeave ? 'checked' : ''}> 휴가 표시</label></div>
-      <div class="sh">조직</div><button class="si ${T.org === 'all' ? 'on' : ''}" data-a="teamOrg" data-id="all">전체</button>${orgs.map((o) => `<button class="si ${T.org === o.id ? 'on' : ''}" data-a="teamOrg" data-id="${o.id}">${esc(o.name)}</button>`).join('')}${close}`);
+    const T = S.team, wrapTf = (inner) => `<div class="sheetbg" data-a="closeSheet"><div class="sheet tf" role="dialog" aria-modal="true" data-stop="1">${inner}</div></div>`;
+    return wrapTf(`<div class="sh" style="font-weight:700;color:var(--text)">필터 · 표시할 사용자</div><div style="padding:0 16px 8px">
+      <div class="searchbox" style="margin:0 0 10px"><input id="tfq" type="search" data-i="tfq" value="${esc(T.q)}" placeholder="조직 또는 이름 검색" aria-label="조직 또는 이름 검색" autocomplete="off"></div>
+      <div class="tfbar"><span><b>${T.sel.size}</b>명 선택됨</span><span class="tfq"><button class="btn sm" data-a="teamAll">전체 선택</button><button class="btn sm" data-a="teamMine">내 조직</button><button class="btn sm" data-a="teamNone">모두 해제</button></span></div>
+      <div class="tfopt"><label><input type="checkbox" data-a="teamToggle" data-k="showWork" ${T.showWork ? 'checked' : ''}> 근무일정 표시</label><label><input type="checkbox" data-a="teamToggle" data-k="showLeave" ${T.showLeave ? 'checked' : ''}> 휴가 표시</label></div></div>
+      <div class="tflist" id="tflist">${tfListHtml()}</div>${close}`);
   }
   return extraSheetBase(sh, wrap);
 }
@@ -2257,6 +2402,7 @@ function resolveCompanyTheme() { const co = (S.settings && S.settings.theme && S
 
 /* ----- 동작: 테마 · 팀 스케줄 ----- */
 const keepScroll = (sel, fn) => { let st = 0; try { const b = document.querySelector(sel); st = b ? b.scrollTop : 0; } catch (e) { /* */ } fn(); try { const b = document.querySelector(sel); if (b) b.scrollTop = st; } catch (e) { /* */ } };
+function teamChanged() { saveTeamPrefs(); keepScroll('.sheet .tflist', render); }
 async function teamGoto(d, ym) {
   const T = S.team, y = ym ? ym.y : +d.slice(0, 4), m = ym ? ym.m : +d.slice(5, 7), changed = y !== T.y || m !== T.m || d < T.from || d > T.to;
   T.day = d; T.y = y; T.m = m;
@@ -2278,16 +2424,165 @@ Object.assign(A, {
     else await teamGoto(addDays(T.day, (T.view === 'week' ? 7 : 1) * n));
   }),
   teamToday: () => guard(async () => { await teamGoto(S.today); }),
-  teamView: (e) => { S.team.view = e.k; render(); },
+  teamView: (e) => { S.team.view = e.k; lsSet('hr_team_view', e.k); render(); },
   teamDay: (e) => { S.team.day = e.d; if (!isDesk()) S.team.view = 'day'; render(); },
-  teamPick: (e, ev) => { const T = S.team, on = !!(ev && ev.target && ev.target.checked); if (on) T.sel.add(e.id); else T.sel.delete(e.id); keepScroll('.sheet .plist', render); },
-  teamAll: () => { const T = S.team; T.sel = new Set(T.people.map((p) => p.id)); keepScroll('.sheet .plist', render); },
-  teamMine: () => { const T = S.team; T.sel = new Set(T.people.filter((p) => p.org_id === S.me.org_id).map((p) => p.id)); keepScroll('.sheet .plist', render); },
-  teamNone: () => { S.team.sel = new Set(); keepScroll('.sheet .plist', render); },
-  teamOrg: (e) => { S.team.org = e.id; S.sheet = null; render(); },
-  teamToggle: (e, ev) => { S.team[e.k] = !!(ev && ev.target && ev.target.checked); render(); },
+  teamPick: (e) => { const T = S.team; if (T.sel.has(e.id)) T.sel.delete(e.id); else T.sel.add(e.id); teamChanged(); },
+  teamOrgToggle: (e) => { const T = S.team, ids = tfIds(e.id), all = ids.length > 0 && ids.every((id) => T.sel.has(id)); for (const id of ids) { if (all) T.sel.delete(id); else T.sel.add(id); } teamChanged(); },
+  teamOpen: (e) => { const T = S.team; if (T.open.has(e.id)) T.open.delete(e.id); else T.open.add(e.id); keepScroll('.sheet .tflist', render); },
+  teamAll: () => { const T = S.team; T.sel = new Set(T.people.map((p) => p.id)); teamChanged(); },
+  teamMine: () => { const T = S.team; T.sel = new Set(T.people.filter((p) => p.org_id === S.me.org_id).map((p) => p.id)); teamChanged(); },
+  teamNone: () => { S.team.sel = new Set(); teamChanged(); },
+  teamToggle: (e, ev) => { S.team[e.k] = !!(ev && ev.target && ev.target.checked); teamChanged(); },
 });
 syncTheme();
+
+/* ---------- PC(900px 이상) 전용 화면 ---------- */
+// 폰 화면을 가운데에 놓는 대신, PC에서는 넓은 화면을 쓰는 구성으로 다시 그린다. 데이터와 동작은 폰 화면과 같다.
+S.deskToday = undefined; S.reqSel = null; S.orgSel = null;
+const dp = (title, body, o = {}) => `<section class="panel ${o.cls || ''}">${title ? `<div class="ph"><h3>${title}</h3>${o.right || ''}</div>` : ''}<div class="pb ${o.pb || ''}">${body}</div></section>`;
+const dtool = (title, right = '') => `<div class="dtool"><h2>${title}</h2><div class="tact">${right}</div></div>`;
+const dkv = (l, v, cls = '') => `<div class="dkv"><span>${l}</span><b class="${cls}">${v}</b></div>`;
+
+async function loadDeskExtras() {
+  if (!isDesk() || !S.me) return;
+  try { S.deskToday = await rpc('team_schedule', { p_from: S.today, p_to: S.today }); } catch (e) { S.deskToday = null; }
+  render();
+  try { const y = +S.today.slice(0, 4), m = +S.today.slice(5, 7); await ensureRange(`${y}-${p2(m)}-01`, `${y}-${p2(m)}-${p2(daysInMonth(y, m))}`); } catch (e) { /* 다음 새로고침 때 */ }
+}
+
+/* ----- 홈 (대시보드) ----- */
+function homeDesk() {
+  const t = S.today, rec = S.recs[t], sc = S.sched[t], hint = clockHint(), noSch = !rec && hint && hint.code === 'no_schedule';
+  const st = !rec ? ['출근 전', ''] : rec.clockOut ? ['퇴근 완료', 'ok'] : ['근무 중', 'live'];
+  const btn = S.busy ? '<button class="btn primary" disabled><span class="spin"></span> 처리 중…</button>' : !rec ? (noSch ? '<button class="btn primary" disabled>출근 불가</button>' : '<button class="btn primary" data-a="clock">출근하기</button>') : !rec.clockOut ? '<button class="btn primary" data-a="clock">퇴근하기</button>' : '<button class="btn primary" disabled>퇴근 완료</button>';
+  const ws = weekStartOf(t); let act = 0, plan = 0; const tiles = [];
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(ws, i), r = S.recs[d], lv = (S.lv[d] || [])[0], s2 = S.sched[d];
+    if (d <= t) act += dailyWorkMinutes(recordDone(r), S.policy) + leaveMin(d);
+    plan += planDay(d);
+    const inner = r ? `<div>${r.clockIn}</div><div class="muted">${r.clockOut || '근무 중'}</div>` : lv ? `<div class="lv">${esc(typeOf(lv.typeId)?.name.split(' ')[0] ?? '휴가')}</div>` : s2 ? `<div class="muted">${s2.start}</div><div class="muted">${s2.end}</div>` : isOffDay(d) ? '<div class="muted">휴일</div>' : '<div class="muted">일정 없음</div>';
+    tiles.push(`<div class="dtile ${d === t ? 'today' : ''}"><div class="d ${i === 0 ? 'sun' : ''}">${DOW[i]} <span class="muted">${+d.slice(8, 10)}</span></div>${inner}</div>`);
+  }
+  const pct = (m) => Math.min(100, (m / (52 * 60)) * 100);
+  const ms = monthSummary(+t.slice(0, 4), +t.slice(5, 7)), L = S.lvx.grants && S.lvx.days ? leaveX(t) : null;
+  const today = (S.deskToday || []).filter((r) => r.kind !== 'person'), works = today.filter((r) => r.kind === 'work').sort((a, b) => hh(a.start_time).localeCompare(hh(b.start_time))), lvs = today.filter((r) => r.kind === 'leave');
+  const pend = [...S.inboxLeave, ...S.inboxAtt, ...S.inboxSch].filter((r) => r.status === 'pending' || (r.status === 'approved' && r.cancel_requested)).slice(0, 5);
+  const mine = [...S.myLeave, ...S.myAtt, ...S.mySch].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 5);
+  const reqRow = (r, who) => `<button class="drow2" data-a="reqJump" data-k="${r.kind}" data-id="${r.id}" data-seg="${who ? 'inbox' : 'mine'}"><span>${who ? `<b>${esc(person(r.user_id)?.name ?? '')}</b> · ` : ''}${esc(reqTitle(r))}</span><span class="muted small">${reqWhen(r)}</span><span class="chip ${stClass(r)}">${stLabel(r)}</span></button>`;
+  const today1 = dp('오늘 근무', `<div class="dday">${+t.slice(5, 7)}월 ${+t.slice(8, 10)}일 ${KDOW[dayOfWeek(t)]} <span class="chip ${st[1]}">${st[0]}</span></div>
+      <div class="muted" style="margin:4px 0 14px">${sc ? `근무일정 ${sc.start} - ${sc.end}` : '근무일정 없음'} · ${esc(orgOf(S.me.org_id)?.name ?? '')}</div>
+      <div class="btns" style="margin:0 0 10px"><button class="btn" data-a="sheet" data-k="request">요청</button>${btn}</div>
+      ${!rec && hint ? `<div class="small" style="margin:0 0 10px;color:${hint.code === 'open' ? 'var(--muted)' : 'var(--red)'}" role="status">${esc(hint.text)}</div>` : ''}
+      ${noSch ? '<div class="btns" style="margin:0 0 10px"><button class="btn block" data-a="schedNew">근무일정 요청하기</button></div>' : ''}
+      ${dkv('출근', rec ? rec.clockIn : '-')}${dkv('퇴근', rec && rec.clockOut ? rec.clockOut : '-')}${dkv('총 근로시간', recordDone(rec) ? hours(dailyWorkMinutes(rec, S.policy)) : '-', 'green')}`);
+  const week = dp('이번주 근무', `<div class="muted small" style="margin:-4px 0 12px">${md(ws)} - ${md(addDays(ws, 6))}</div><div class="dweek">${tiles.join('')}</div>
+      <div class="bar" role="img" aria-label="이번주 실제 ${hours(act)} / 계획 ${hours(plan)}"><div class="plan" style="width:${pct(plan)}%"></div><div class="act" style="width:${pct(act)}%"></div><div class="pl" style="left:${pct(plan)}%">계획 ▾</div><div class="tick" style="left:${pct(40 * 60)}%"></div><div class="tick lim" style="left:100%"></div><div class="lbl" style="left:${pct(40 * 60)}%">40</div><div class="lbl" style="left:98%">52</div></div>
+      <div class="sumline" style="margin-top:30px">${hours(act)} <span>/ 계획 ${hours(plan)} (휴가 포함)</span></div>`, { right: '<button class="lnk" data-a="reportOpen">내 리포트 ›</button>' });
+  const month = dp(`${+t.slice(5, 7)}월 요약`, `${dkv('평일 합계', hours(ms.weekdayMinutes), 'green')}${dkv('실근로', hours(ms.workMinutes))}${dkv('휴가 환산', hours(ms.leaveMinutes))}${dkv('휴일근로', hours(ms.holidayWorkMinutes))}${dkv('월 소정근로시간', `${hours(ms.scheduled)} (${ms.scheduledDays}일)`)}`);
+  const leave = dp('내 연차', L ? `<div class="dbig">${fmtN(L.remaining)}<span>일 남음</span></div>${dkv('총', `${fmtN(L.total)}일`)}${dkv('사용', `${fmtN(L.used)}일`)}${S.bal && S.bal.period_end ? dkv('소멸일', dotD(S.bal.period_end)) : ''}<div class="btns" style="margin-top:12px"><button class="btn green" data-a="leaveNew">✈ 휴가 신청</button></div>` : spinner);
+  const team = dp('오늘의 팀', S.deskToday === undefined ? spinner : S.deskToday ? `<div class="dsub">근무 ${works.length}명</div>${works.slice(0, 8).map((e) => `<div class="dkv"><span><i class="tdot" style="background:${pcolor(e.user_id)}"></i>${esc(e.name)}</span><span class="muted">${hh(e.start_time)}-${hh(e.end_time)}</span></div>`).join('') || '<div class="muted small">근무 일정이 있는 사람이 없습니다.</div>'}${works.length > 8 ? `<div class="muted small">외 ${works.length - 8}명</div>` : ''}${lvs.length ? `<div class="dsub" style="margin-top:12px">휴가 ${new Set(lvs.map((e) => e.user_id)).size}명</div>${[...new Map(lvs.map((e) => [e.user_id, e])).values()].map((e) => `<div class="dkv"><span>✈ ${esc(e.name)}</span><span class="muted">${esc(e.leave_type)}</span></div>`).join('')}` : ''}` : '<div class="muted small">팀 일정을 불러오지 못했습니다.</div>', { right: '<button class="lnk" data-a="tab" data-k="team">스케줄 ›</button>' });
+  const reqs = `<div class="dgrid2">${dp('내가 처리할 요청', pend.map((r) => reqRow(r, true)).join('') || '<div class="muted small">처리할 요청이 없습니다.</div>', { right: `<button class="lnk" data-a="reqJump" data-seg="inbox">전체 보기 ›</button>` })}${dp('내 최근 요청', mine.map((r) => reqRow(r, false)).join('') || '<div class="muted small">요청 내역이 없습니다.</div>', { right: `<button class="lnk" data-a="reqJump" data-seg="mine">전체 보기 ›</button>` })}</div>`;
+  return { header: '', cls: 'wide desk', body: `<div class="dgrid"><div class="c5">${today1}</div><div class="c7">${week}</div><div class="c4">${month}</div><div class="c4">${leave}</div><div class="c4">${team}</div><div class="c12">${reqs}</div></div>` };
+}
+DESK.tabs.home = homeDesk;
+
+/* ----- 요청 (목록 + 상세) ----- */
+function requestsDesk() {
+  const all = (a, b, c) => [...a, ...b, ...c].sort((x, y) => y.created_at.localeCompare(x.created_at));
+  const inbox = S.seg === 'inbox', list = inbox ? all(S.inboxLeave, S.inboxAtt, S.inboxSch).sort((a, b) => (b.status === 'pending') - (a.status === 'pending')) : all(S.myLeave, S.myAtt, S.mySch), n = pendingCount();
+  const sel = (S.reqSel && list.find((r) => r.id === S.reqSel.id && r.kind === S.reqSel.kind)) || list[0];
+  const kindKo = { leave: '휴가', attendance: '출퇴근 정정', schedule: '근무일정' };
+  const rows = list.map((r) => `<button class="drow ${sel && sel.id === r.id && sel.kind === r.kind ? 'on' : ''}" data-a="reqSel" data-k="${r.kind}" data-id="${r.id}"><span class="k">${kindKo[r.kind]}</span><span class="t"><b>${inbox ? `${esc(person(r.user_id)?.name ?? '')} · ` : ''}${esc(reqTitle(r))}</b><span class="muted small">${reqWhen(r)}</span></span><span class="muted small">${inbox ? '' : `승인권자 ${esc(person(r.approver_id)?.name ?? '')}`}</span><span class="chip ${stClass(r)}">${stLabel(r)}</span></button>`).join('');
+  const detail = sel ? requestDetail({ id: sel.id, kind: sel.kind }).body : '<div class="empty">왼쪽에서 요청을 선택하세요.</div>';
+  const banner = signupCount() ? `<button class="card rowbtn" style="margin-bottom:12px;color:var(--primary)" data-a="signups"><span>가입 요청 ${signupCount()}건이 승인을 기다립니다</span><span class="chev">${ico('chev')}</span></button>` : '';
+  return { header: '', cls: 'wide desk', body: `${dtool('요청', '<button class="btn sm blue" data-a="sheet" data-k="request">+ 새 요청</button>')}${banner}<div class="dsplit"><section class="panel"><div class="ph"><div class="seg3" role="group" aria-label="요청 구분"><button class="${!inbox ? 'on' : ''}" data-a="seg" data-k="mine">내 요청</button><button class="${inbox ? 'on' : ''}" data-a="seg" data-k="inbox">승인 대기 ${n}</button></div></div><div class="dlist">${rows || '<div class="empty">요청이 없습니다.</div>'}</div></section><section class="dside">${detail}</section></div>` };
+}
+DESK.tabs.requests = requestsDesk;
+
+/* ----- 월 근무 ----- */
+function monthDesk() { const s = scheduleScreen(); return { header: '', cls: `${s.cls || ''} wide desk`, body: `${dtool('월 근무', '<button class="btn sm blue" data-a="schedNew">근무일정 생성 요청</button>')}${s.body}` }; }
+DESK.tabs.schedule = monthDesk;
+
+/* ----- 출퇴근기록 ----- */
+function recordsDesk() {
+  const c = S.rec, s = monthSummary(c.y, c.m), rows = [];
+  for (let d = 1; d <= daysInMonth(c.y, c.m); d++) {
+    const date = `${c.y}-${p2(c.m)}-${p2(d)}`, r = S.recs[date], lv = leaveMin(date, false); if (!r && !lv) continue;
+    const w = recordDone(r) ? dailyWorkMinutes(r, S.policy) : 0;
+    rows.push(`<tr><td class="${isOffDay(date) ? 'sun' : ''}">${md(date)} (${DOW[dayOfWeek(date)]})</td><td>${r ? r.clockIn : '-'}</td><td>${r ? (r.clockOut ?? '근무 중') : '-'}</td><td><b class="green">${w ? hours(w) : '-'}</b></td><td>${isOffDay(date) && w ? '<span class="chip wait">휴일근로</span> ' : ''}${r && r.source === 'correction' ? '<span class="chip live">정정</span> ' : ''}${lv ? `<span class="chip live">휴가 ${hours(lv)}</span>` : ''}</td></tr>`);
+  }
+  return { header: '', cls: 'wide desk', body: `${dtool('출퇴근기록', '<button class="btn sm line" data-a="attNew" data-k="edit">출퇴근기록 정정 요청</button>')}<div class="dtbar">${monthNav(c, 'rec')}</div>
+    <div class="dsplit2"><section class="panel"><div class="ph"><h3>${c.m}월 근태 집계</h3></div><div class="pb">${dkv('평일 합계 (실근로 + 휴가 환산)', hours(s.weekdayMinutes), 'green')}${dkv('└ 실근로', hours(s.workMinutes))}${dkv('└ 휴가 환산 (승인된 휴가)', hours(s.leaveMinutes))}${dkv('휴일근로 (별도 집계)', hours(s.holidayWorkMinutes))}${dkv('월 소정근로시간', `${hours(s.scheduled)} (${s.scheduledDays}일)`)}<div class="muted small" style="margin-top:8px">휴게 ${S.policy.breakMinutes}분 고정 공제 · 휴가는 하루 ${S.policy.leaveHoursPerDay}시간 기준</div></div></section>
+      <section class="panel"><div class="ph"><h3>일별 기록</h3></div><div class="pb flush"><table class="dtable"><thead><tr><th>날짜</th><th>출근</th><th>퇴근</th><th>근로시간</th><th>구분</th></tr></thead><tbody>${rows.join('') || '<tr><td colspan="5" class="empty">기록이 없습니다.</td></tr>'}</tbody></table></div></section></div>` };
+}
+DESK.tabs.records = recordsDesk;
+
+/* ----- 휴가 ----- */
+function leaveDesk() {
+  if (!S.bal || !S.lvx.grants || !S.lvx.days) return { header: '', cls: 'wide desk', body: spinner };
+  const x = S.lvx, date = x.date || S.today, L = leaveX(date), tab = x.dtab || 'req', per = L.per;
+  const inPer = (r) => !per || (r.dates[0] >= per.start && r.dates[0] <= per.end), reqs = S.myLeave.filter(inPer).sort((a, b) => b.dates[0].localeCompare(a.dates[0]));
+  const left = dp('휴가 현황', `<div style="margin-bottom:12px">${datePicker(date)}</div>
+      <table class="dtable"><thead><tr><th>휴가 그룹</th><th>총</th><th>사용</th><th>잔여</th></tr></thead><tbody><tr><td>1. 연차휴가</td><td>${fmtN(L.total)}</td><td>${fmtN(L.used)}</td><td class="g">${fmtN(L.remaining)}</td></tr>${L.etc.length ? `<tr><td>2. 기타</td><td>${fmtN(L.etcSum.total)}</td><td>${fmtN(L.etcSum.used)}</td><td class="g">${fmtN(L.etcSum.remain)}</td></tr>` : ''}</tbody></table>
+      <div style="margin-top:16px">${dkv('산정 기간', per ? rangeLabel(per.start, per.end) : '-')}${dkv('총 휴가 일수', fmtN(L.total))}${dkv('사용한 휴가 일수', fmtN(L.used))}${dkv('남은 휴가 일수', fmtN(L.remaining), 'green')}</div>
+      ${L.etc.map((e) => dkv(esc(e.t.name), `${fmtN(e.used)} / ${fmtN(e.total)}일`)).join('')}`);
+  const tabs = `<div class="seg3" role="tablist">${[['req', '신청 내역'], ['grant', '발생 내역'], ['used', '사용 내역']].map(([k, l]) => `<button class="${tab === k ? 'on' : ''}" data-a="lvDtab" data-k="${k}">${l}</button>`).join('')}</div>`;
+  let body;
+  if (tab === 'req') body = `<table class="dtable clk"><thead><tr><th>날짜</th><th>유형</th><th>사유</th><th>상태</th></tr></thead><tbody>${reqs.map((r) => `<tr data-a="reqJump" data-k="leave" data-id="${r.id}" data-seg="mine" tabindex="0"><td>${md(r.dates[0])} (${DOW[dayOfWeek(r.dates[0])]})${r.dates.length > 1 ? ` 외 ${r.dates.length - 1}일` : ''}</td><td>${esc(reqTypeTitle(r))}</td><td class="muted">${esc(r.reason || '')}</td><td><span class="chip ${stClass(r)}">${stLabel(r)}</span></td></tr>`).join('') || '<tr><td colspan="4" class="empty">이 기간의 휴가 내역이 없습니다.</td></tr>'}</tbody></table>`;
+  else if (tab === 'grant') body = `<table class="dtable"><thead><tr><th>기간</th><th>구분</th><th>일수</th><th></th></tr></thead><tbody>${x.grants.slice().sort((a, b) => a.grant_date.localeCompare(b.grant_date)).map((g) => `<tr><td>${dotD(g.grant_date)} - ${dotD(g.expires_on)}</td><td>${esc(grantLabel(g))}</td><td><b>${fmtN(g.days)}일</b></td><td>${g.expires_on < S.today ? '<span class="chip">만료됨</span>' : ''}</td></tr>`).join('') || '<tr><td colspan="4" class="empty">발생 내역이 없습니다.</td></tr>'}</tbody></table>`;
+  else body = `<table class="dtable"><thead><tr><th>날짜</th><th>유형</th><th>차감</th><th>상태</th></tr></thead><tbody>${L.annualDays.slice().sort((a, b) => b.leave_date.localeCompare(a.leave_date)).map((d) => `<tr><td>${md(d.leave_date)} (${DOW[dayOfWeek(d.leave_date)]})</td><td>${esc(typeOf(d.type_id)?.name ?? '휴가')}</td><td>-${fmtN(d.deduct_days)}일</td><td>${d.leave_requests && d.leave_requests.status === 'pending' ? '<span class="chip wait">대기</span>' : '<span class="chip ok">승인</span>'}</td></tr>`).join('') || '<tr><td colspan="4" class="empty">사용 내역이 없습니다.</td></tr>'}</tbody></table>`;
+  return { header: '', cls: 'wide desk', body: `${dtool('휴가', '<button class="btn sm green" data-a="leaveNew">✈ 휴가 신청</button>')}<div class="dsplit2">${left}<section class="panel"><div class="ph">${tabs}</div><div class="pb flush">${body}</div></section></div>` };
+}
+DESK.tabs.leave = leaveDesk;
+
+/* ----- 조직도 (트리 + 상세) ----- */
+function orgDesk() {
+  const sel = S.orgSel && S.orgs.find((o) => o.id === S.orgSel) ? S.orgSel : (orgRows()[0] || { o: {} }).o.id;
+  const detail = sel ? orgDetailPage({ id: sel }).body : '<div class="empty">조직을 선택하세요.</div>';
+  return { header: header({ back: true, title: '조직도' }), cls: 'wide desk', body: `<div class="dsplit2"><section class="panel"><div class="ph"><div class="searchbox" style="margin:0;flex:1"><input id="orgq" type="search" data-i="orgq" value="${esc(S.orgq)}" placeholder="조직·이름 검색" aria-label="조직이나 이름 검색" autocomplete="off"></div></div><div class="pb flush" id="orgl">${orgListHtml()}</div></section><section class="dside">${detail}</section></div>` };
+}
+DESK.pages.orgchart = orgDesk;
+
+/* ----- 리포트 ----- */
+function reportDesk() {
+  const r = S.rep || { y: +S.today.slice(0, 4), m: +S.today.slice(5, 7) }, c = calcReport(r.y, r.m), ms = monthSummary(r.y, r.m), last = daysInMonth(r.y, r.m);
+  const val2 = (k) => (k === 'paidHours' ? `${fmtN(c.paidHours)}h` : k === 'deduct' || k === 'paidDays' ? `${fmtN(c[k])}일` : `${Array.isArray(c[k]) ? c[k].length : c[k]}일`);
+  const rows = REPROWS.map(([k, label, info]) => info ? `<div class="rrow"><b>${label}</b><span>${val2(k)} <button class="ib sm" data-a="infoOpen" data-k="${k}" aria-label="${label} 설명"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6M12 7.5v.5"/></svg></button></span></div>` : `<button class="rrow" data-a="repRow" data-k="${k}"><b>${label}</b><span>${val2(k)} ${ico('chev')}</span></button>`).join('');
+  return { header: header({ back: true, title: '리포트' }), cls: 'wide desk', body: `<div class="dtbar"><div class="calhd"><button class="ib" data-a="repNav2" data-n="-1" aria-label="이전 달">${ico('back')}</button><b>${p2(r.m)}.01 - ${p2(r.m)}.${p2(last)} <span class="muted small">(${r.y})</span></b><button class="ib" data-a="repNav2" data-n="1" aria-label="다음 달">${ico('chev')}</button></div></div>
+    <div class="dsplit2"><section class="panel"><div class="ph"><h3>근태 · 휴가</h3></div><div class="pb flush">${rows}</div></section>
+      <div class="dstack"><section class="panel"><div class="ph"><h3>근로시간</h3></div><div class="pb">${dkv('근로시간 (휴게 공제 후)', hours(ms.workMinutes))}${dkv('유급시간 (근로 + 유급휴가)', hours(ms.workMinutes + ms.leaveMinutes))}${dkv('휴일근로시간', hours(ms.holidayWorkMinutes))}${dkv('월 소정근로시간', hours(ms.scheduled))}${dkv('소정 대비 (평일 합계 − 소정)', `${ms.weekdayMinutes - ms.scheduled >= 0 ? '+' : '-'}${hours(Math.abs(ms.weekdayMinutes - ms.scheduled))}`, ms.weekdayMinutes - ms.scheduled >= 0 ? 'green' : 'sun')}</div></section>
+      <section class="panel"><div class="ph"><h3>판정 기준</h3></div><div class="pb"><div class="muted small" style="line-height:1.7">지각·조퇴·결근은 승인된 근무일정을 기준으로 판정하며, 휴가가 있는 날과 일정이 없는 날은 제외합니다. 오늘은 결근으로 보지 않습니다. 조퇴·퇴근 누락은 퇴근 기록을 기준으로 합니다. 각 행을 누르면 해당 날짜 목록이 나옵니다.</div></div></section></div></div>` };
+}
+DESK.pages.report = reportDesk;
+
+/* ----- 관리자: 왼쪽 메뉴가 있는 관리 화면 ----- */
+const ADMIN_NAV = [['signups', '가입 요청'], ['adminPeople', '직원 관리'], ['adminOrgs', '조직 관리'], ['adminTypes', '휴가 유형'], ['adminHolidays', '공휴일'], ['adminRules', '근무·출근·연차 규칙'], ['adminGeo', '위치 제한'], ['adminTheme', '화면 테마'], ['adminReport', '월 근태 집계 · CSV'], ['adminAudit', '변경 이력']];
+const ADMIN_GROUP = { admin: null, signups: 'signups', adminPeople: 'adminPeople', adminPerson: 'adminPeople', adminOrgs: 'adminOrgs', adminOrg: 'adminOrgs', adminTypes: 'adminTypes', adminType: 'adminTypes', adminHolidays: 'adminHolidays', adminRules: 'adminRules', adminGeo: 'adminGeo', adminSite: 'adminGeo', adminTheme: 'adminTheme', adminReport: 'adminReport', adminAudit: 'adminAudit' };
+DESK.wrap = function (top, inner) {
+  if (!top || !(top.name in ADMIN_GROUP) || !isAdmin()) return inner === undefined ? false : inner;
+  if (inner === undefined) return true;
+  const cur = ADMIN_GROUP[top.name], n = signupCount();
+  return `<div class="adminshell"><nav class="adminnav" aria-label="관리자 메뉴"><div class="at"><span class="chip adm">관리자 기능</span></div>${ADMIN_NAV.map(([k, l]) => `<button class="${cur === k ? 'on' : ''}" data-a="adminNav" data-k="${k}">${l}${k === 'signups' && n ? `<span class="badge">${n}</span>` : ''}</button>`).join('')}</nav><div class="adminbody">${inner}</div></div>`;
+};
+
+/* ----- 동작 ----- */
+Object.assign(A, {
+  reqSel: (e) => { S.reqSel = { id: e.id, kind: e.k }; render(); },
+  reqJump: (e) => guard(async () => { if (e.id) S.reqSel = { id: e.id, kind: e.k }; if (e.seg) S.seg = e.seg; S.tab = 'requests'; S.stack = []; S.sheet = null; render(); await tabLoad(); }),
+  lvDtab: (e) => { S.lvx.dtab = e.k; render(); },
+  adminNav: (e) => guard(async () => {
+    need(); S.sheet = null;
+    if (e.k === 'signups') { await loadSignups(); S.stack = []; push('signups'); return; }
+    if (ADM_LOAD[e.k]) await ADM_LOAD[e.k](); S.stack = []; push(e.k);
+  }),
+});
+const _orgDetailMobile = A.orgDetail;
+A.orgDetail = (e) => { if (isDesk()) { S.orgSel = e.id; render(); } else _orgDetailMobile(e); };
+(function watchResize() {
+  if (typeof window === 'undefined' || !window.addEventListener) return;
+  let last = isDesk(), timer;
+  window.addEventListener('resize', () => { clearTimeout(timer); timer = setTimeout(() => { const now = isDesk(); if (now !== last) { last = now; if (S.view === 'main') { if (now) loadDeskExtras().then(render); else render(); } } }, 150); });
+})();
 
 document.addEventListener('click', (e) => {
   if (e.target.closest('[data-stop]') && !e.target.closest('[data-a]')) return;
