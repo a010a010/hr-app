@@ -490,7 +490,7 @@ label.pkrow{cursor:pointer}
 <script>
 /* 공개용 설정: Project URL과 publishable(anon) 키만 넣는다. secret/service_role 키와 DB 비밀번호는 절대 넣지 않는다. */
 window.APP_CONFIG = { url: 'https://zqfvntplsqftbkfewqsk.supabase.co', key: 'sb_publishable_bXeTU9omjAxUzUijyNzEkg_JmrTo-8v' };
-window.APP_BUILD = '2026-11-04 15:24';
+window.APP_BUILD = '2026-11-04 15:36';
 </script>
 <script>
 /* ---- dates.js ---- */
@@ -1907,8 +1907,8 @@ function adminAuditPage() {
 /* ----- 시스템 점검 (적용된 DB 업데이트 확인) ----- */
 const STATUS_ITEMS = [
   ['s07', '근무일정 · 출근 규칙', 'SQL 07'], ['s08', '휴가 취소 요청 · 일정 대리 등록 · 마지막 관리자 보호', 'SQL 08'],
-  ['s09_candidates', '관리자 본인을 승인권자로 선택', 'SQL 14'], ['s09_checks', '본인 승인 제약 해제', 'SQL 14'], ['s09_decide', '본인 요청 승인 처리', 'SQL 14'],
-  ['s10', '팀 스케줄 (권한 묶음 포함)', 'SQL 10'], ['s11', '개인 설정 저장 (선택한 사람 기억)', 'SQL 11'], ['s13', '지난 일정 요청', 'SQL 14'], ['s15', '공휴일 자동 가져오기', 'SQL 15'],
+  ['s09_candidates', '관리자 본인을 승인권자로 선택', '99_apply_all'], ['s09_checks', '본인 승인 제약 해제', '99_apply_all'], ['s09_decide', '본인 요청 승인 처리', '99_apply_all'],
+  ['s10', '팀 스케줄 (권한 묶음 포함)', '99_apply_all'], ['s11', '개인 설정 저장 (선택한 사람 기억)', '99_apply_all'], ['s13', '지난 일정 요청', '99_apply_all'], ['s15', '공휴일 자동 가져오기', '15_holiday_sync'],
 ];
 function adminStatusPage() {
   const st = S.adm.status;
@@ -1917,7 +1917,7 @@ function adminStatusPage() {
   else if (!st) body = '<div class="card"><b>점검 기능이 아직 설치되지 않았습니다.</b><div class="muted small" style="margin-top:6px">SQL 14번을 한 번 실행하면 설치되고, 그 뒤로는 이 화면에서 적용 상태를 볼 수 있습니다.</div><div class="btns"><button class="btn" data-a="statusReload">다시 확인</button></div></div>';
   else {
     const bad = STATUS_ITEMS.filter(([k]) => !st[k]);
-    body = `<div class="card"><b>${bad.length ? `${bad.length}개 항목이 적용되지 않았습니다.` : '모든 업데이트가 적용되어 있습니다.'}</b>${bad.length ? '<div class="muted small" style="margin-top:6px">SQL 14번을 한 번 실행하면 SQL 14 표시 항목이 모두 적용됩니다. 07, 08, 10, 11은 해당 번호의 SQL을 실행하세요.</div>' : ''}<div class="btns"><button class="btn" data-a="statusReload">다시 확인</button></div></div>
+    body = `<div class="card"><b>${bad.length ? `${bad.length}개 항목이 적용되지 않았습니다.` : '모든 업데이트가 적용되어 있습니다.'}</b>${bad.length ? `<div class="muted small" style="margin-top:6px">실행할 SQL: <b>${[...new Set(bad.map((x) => x[2]))].join(', ')}</b> (99_apply_all은 10·11·09·12·13을 한 번에 적용하는 파일입니다.)</div>` : ''}<div class="btns"><button class="btn" data-a="statusReload">다시 확인</button></div></div>
       <div class="card flush">${STATUS_ITEMS.map(([k, l, sql]) => `<div class="kv" style="padding:14px 16px;border-top:1px solid var(--line)"><span>${esc(l)}</span><span>${st[k] ? '<span class="chip ok">적용됨</span>' : `<span class="chip no">적용 필요</span> <span class="muted small">${sql}</span>`}</span></div>`).join('')}</div>`;
   }
   return { header: header({ back: true, title: '시스템 점검' }), cls: 'narrow', body: `<div class="muted small" style="padding:0 4px 10px">앱 버전 ${esc(window.APP_BUILD || '-')} · 이 시각이 최신 파일의 시각과 같아야 새 버전입니다.</div>${body}` };
