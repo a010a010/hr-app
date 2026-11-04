@@ -432,6 +432,37 @@ button.rrow{cursor:pointer}.rrow span{display:inline-flex;align-items:center;gap
 .cbx:focus-visible,.tfx:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
 .orgmem{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .mchip{background:var(--today);color:var(--primary);border-radius:12px;padding:2px 10px;font-size:13px}
+
+/* 시프티식 사용자 선택 드롭다운 */
+.popwrap{position:relative;display:inline-block}
+.popwrap.open{z-index:56}
+.popbd{position:fixed;inset:0;z-index:55;background:transparent}
+.pop{position:absolute;top:calc(100% + 6px);left:0;width:420px;max-width:calc(100vw - 24px);background:var(--card);border:1px solid var(--line);border-radius:6px;box-shadow:0 8px 28px rgba(0,0,0,.2);z-index:56;display:flex;flex-direction:column;overflow:hidden}
+.pop.pf{width:240px}
+.pop .ppsearch{display:flex;gap:6px;padding:8px}
+.pop .ppsearch .searchbox{margin:0;flex:1}
+.pop .ppsearch .searchbox input{padding:9px 12px;font-size:14px}
+.pop .ppadv{display:flex;justify-content:flex-end;align-items:center;gap:8px;padding:0 12px 6px}
+.hlp{display:inline-grid;place-items:center;width:18px;height:18px;border:1.5px solid var(--muted);border-radius:50%;font-size:11px;color:var(--muted);cursor:help}
+.pop .tflist{max-height:50vh;min-height:0;border-top:0;border-bottom:0}
+.pkhd{background:var(--off);padding:9px 14px;font-weight:700;font-size:13px;color:var(--muted)}
+.pkrow{display:flex;align-items:center;gap:10px;width:100%;border:0;background:var(--card);padding:10px 14px;text-align:left;font:inherit;color:inherit;cursor:pointer}
+label.pkrow{cursor:pointer}
+.pkrow:hover{background:var(--off)}
+.pkrow:focus-visible{outline:2px solid var(--primary);outline-offset:-2px}
+.pkrow b{font-weight:600}
+.pkrow .tdot{display:inline-block;width:9px;height:9px;border-radius:50%;flex:none}
+.pkrow .muted{margin-left:2px}
+.pkrow.all{color:var(--primary);border-bottom:1px solid var(--line)}
+.pkrow.all .small{margin-left:auto}
+.cbs{width:18px;height:18px;border:2px solid var(--muted);border-radius:3px;flex:none;position:relative;background:var(--card)}
+.cbs.on,.cbs.part{background:var(--primary);border-color:var(--primary)}
+.cbs.on::after{content:'';position:absolute;left:4px;top:0;width:5px;height:10px;border:solid var(--primary-ink);border-width:0 2px 2px 0;transform:rotate(45deg)}
+.cbs.part::after{content:'';position:absolute;left:2px;top:6px;width:10px;height:2px;background:var(--primary-ink)}
+@media (max-width:899px){
+  .pop,.pop.pf{position:fixed;left:8px;right:8px;top:auto;bottom:8px;width:auto;max-width:none;max-height:82vh;border-radius:14px}
+  .popbd{background:var(--dim)}
+}
 </style>
 </head>
 <body>
@@ -869,6 +900,7 @@ async function loadStatic() {
   if (rule) S.policy = { breakMinutes: rule.break_minutes, leaveHoursPerDay: rule.daily_minutes / 60, weeklyHolidayDow: rule.weekly_holiday_dow };
   S.exempt = ex.length > 0;
   if (typeof syncTheme === 'function') syncTheme();
+  if (typeof syncCompany === 'function') syncCompany();
   return true;
 }
 async function loadRange(from, to) {
@@ -928,7 +960,7 @@ async function refreshAll() {
 
 /* ---------- 화면 조각 ---------- */
 const header = (o) => `<header class="hdr">${o.back ? `<button class="ib" data-a="back" aria-label="뒤로">${ico('back')}</button>` : `<button class="ib menu-btn" data-a="drawer" aria-label="메뉴">${ico('menu')}</button>`}
-  ${o.logo ? '<div class="logo">근태·휴가</div><div class="ttl onlydesk">홈</div>' : `<div class="ttl">${esc(o.title)}</div>`}${o.right || ''}</header>`;
+  ${o.logo ? `<div class="logo">${esc(companyName())}</div><div class="ttl onlydesk">홈</div>` : `<div class="ttl">${esc(o.title)}</div>`}${o.right || ''}</header>`;
 const signupCount = () => (S.me && S.me.role === 'admin' ? S.signups.length : 0);
 const pendingCount = () => [...S.inboxLeave, ...S.inboxAtt, ...S.inboxSch].filter((r) => r.status === 'pending' || (r.status === 'approved' && r.cancel_requested)).length;
 const NAV = [['home', '홈', 'home'], ['requests', '요청', 'inbox'], ['schedule', '월 근무', 'cal'], ['records', '출퇴근기록', 'clock'], ['leave', '휴가', 'plane']];
@@ -939,7 +971,7 @@ function tabbar() {
 const NAV_PC = [['home', '홈', 'home'], ['team', '스케줄', 'cal'], ['requests', '요청', 'inbox'], ['schedule', '월 근무', 'cal'], ['records', '출퇴근기록', 'clock'], ['leave', '휴가', 'plane']];
 function sidebar() {
   const n = pendingCount();
-  return `<aside class="side" aria-label="메뉴"><div class="brand">근태·휴가</div><nav class="topnav">${NAV_PC.map(([k, l]) => `<button class="navbtn ${S.tab === k && !S.stack.length ? 'on' : ''}" data-a="tab" data-k="${k}">${l}${k === 'requests' ? `<span class="badge ${n ? '' : 'gray'}">${n}</span>` : ''}</button>`).join('')}</nav>
+  return `<aside class="side" aria-label="메뉴"><div class="brand">${esc(companyName())}</div><nav class="topnav">${NAV_PC.map(([k, l]) => `<button class="navbtn ${S.tab === k && !S.stack.length ? 'on' : ''}" data-a="tab" data-k="${k}">${l}${k === 'requests' ? `<span class="badge ${n ? '' : 'gray'}">${n}</span>` : ''}</button>`).join('')}</nav>
     <div class="sidefoot"><button class="navbtn userbtn" data-a="drawer" aria-haspopup="dialog">${esc(S.me.name)} ▾</button></div></aside>`;
 }
 const monthNav = (c, key) => `<div class="calhd"><button class="ib" data-a="mnav" data-k="${key}" data-n="-1" aria-label="이전 달">${ico('back')}</button><b>${c.m}월 ${c.y}</b><button class="ib" data-a="mnav" data-k="${key}" data-n="1" aria-label="다음 달">${ico('chev')}</button></div>`;
@@ -1286,7 +1318,7 @@ function authScreen() {
         <div class="btns"><button class="btn primary" data-a="requestSignup" ${S.busy ? 'disabled' : ''}>${S.busy ? '요청 중…' : '가입 요청 보내기'}</button><button class="btn" data-a="logout">로그아웃</button></div></div></div>`;
   }
   const signup = S.authMode === 'signup';
-  return `<div class="login"><h1>근태·휴가</h1><div class="muted">${signup ? '회사에서 쓰는 이메일로 계정을 만들고, 관리자의 승인을 받으세요.' : '회사에서 안내받은 계정으로 로그인하세요.'}</div>
+  return `<div class="login"><h1>${esc(companyName())}</h1><div class="muted">${signup ? '회사에서 쓰는 이메일로 계정을 만들고, 관리자의 승인을 받으세요.' : '회사에서 안내받은 계정으로 로그인하세요.'}</div>
     <div class="seg" style="margin-top:16px"><button class="${!signup ? 'on' : ''}" data-a="setMode" data-k="login">로그인</button><button class="${signup ? 'on' : ''}" data-a="setMode" data-k="signup">계정 만들기</button></div>
     <div class="card"><label for="em" style="margin-top:0">이메일</label><input id="em" type="email" inputmode="email" autocomplete="username" autocapitalize="none" spellcheck="false" value="${esc(S.lastEmail || '')}">
       <label for="pw">비밀번호${signup ? ' (8자 이상)' : ''}</label><input id="pw" type="password" autocomplete="${signup ? 'new-password' : 'current-password'}">
@@ -1620,13 +1652,14 @@ const ADM_LOAD = {
     S.adm.sites = sites; S.adm.exempt = new Set(ex.map((x) => x.user_id)); S.adm.people = people;
   },
   adminTheme: async () => { await loadSettingsFresh(); },
+  adminCompany: async () => { await loadSettingsFresh(); S.orgs = await rest('org_units', 'select=id,name,parent_id,head_id,head_title,sort'); },
   adminAudit: async () => { S.adm.audit = await rest('audit_log', 'select=*&order=id.desc&limit=100'); },
   adminReport: async () => { S.adm.rep = S.adm.rep || { y: +S.today.slice(0, 4), m: +S.today.slice(5, 7) }; await buildReport(); },
 };
 
 /* ----- 메뉴 ----- */
 function adminHomePage() {
-  const rows = [['signups', '가입 요청', `${signupCount()}건 대기`], ['adminPeople', '직원 관리', '소속·권한·상태, 연차, 일정 대리 등록'], ['adminOrgs', '조직 관리', '조직도와 조직장 (승인권자 후보의 기준)'],
+  const rows = [['signups', '가입 요청', `${signupCount()}건 대기`], ['adminPeople', '직원 관리', '소속·권한·상태, 연차, 일정 대리 등록'], ['adminOrgs', '조직 관리', '부서·팀 이름, 조직도, 조직장'], ['adminCompany', '회사 정보', '회사명, 최상위 조직 이름'],
     ['adminTypes', '휴가 유형', '유형·그룹, 연차 차감, 승인 범위'], ['adminHolidays', '공휴일', '대체공휴일 포함'], ['adminRules', '근무·출근·연차 규칙', '휴게, 출근 허용 시간, 연차 기준, 승인 정책'],
     ['adminGeo', '위치 제한', '근무지, 반경, 제외 대상'], ['adminTheme', '화면 테마', '회사 기본 색상 테마'], ['adminReport', '월 근태 집계 · CSV', '급여 정산용'], ['adminAudit', '변경 이력', '누가 무엇을 바꿨는지']];
   return { header: header({ back: true, title: '관리자 메뉴' }), cls: 'narrow', body: `<div class="card flush">${rows.map(([k, t, sub]) => `<button class="rowbtn" style="border-top:1px solid var(--line)" data-a="${k === 'signups' ? 'signups' : 'go'}" data-k="${k}"><div><div>${t}</div><div class="muted small" style="font-weight:400">${sub}</div></div><span class="chev">${ico('chev')}</span></button>`).join('')}</div>` };
@@ -1833,6 +1866,16 @@ function adminAuditPage() {
   return { header: header({ back: true, title: '변경 이력' }), cls: 'narrow', body: `<div class="card flush">${rows.map((a) => `<div class="kv" style="padding:10px 16px;border-top:1px solid var(--line)"><span><b>${esc(TB[a.table_name] || a.table_name)}</b> ${OP[a.op] || a.op}<div class="muted small">${a.actor ? esc((person(a.actor) || {}).name || '사용자') : 'DB 직접 변경'}</div></span><span class="muted small">${kst(a.at)}</span></div>`).join('') || '<div class="empty">기록이 없습니다.</div>'}</div><div class="demo">최근 100건만 보여 줍니다.</div>` };
 }
 
+/* ----- 회사 정보 (회사명) ----- */
+function adminCompanyPage() {
+  const root = S.orgs.find((o) => !o.parent_id);
+  return { header: header({ back: true, title: '회사 정보' }), cls: 'narrow', body: `
+    ${fld('co-name', '회사명 (화면 왼쪽 위 이름과 로그인 화면에 표시)', txt('co-name', ((S.settings.company || {}).name) || companyName(), 'text', 'maxlength="30"'))}
+    <div class="field">${chk('co-root', `최상위 조직 이름도 같이 바꾸기 (현재: ${root ? root.name : '-'})`, !!root)}</div>
+    <div class="btns"><button class="btn primary block" data-a="saveCompany">저장</button></div>
+    <div class="demo">부서·팀 이름은 <button class="lnk" data-a="go" data-k="adminOrgs">조직 관리</button>에서 조직을 눌러 바꿉니다.</div>` };
+}
+
 /* ----- 화면 테마 (회사 기본) ----- */
 function adminThemePage() {
   const cur = (S.settings.theme || {}).default || 'light';
@@ -1845,7 +1888,7 @@ function pwPage() {
   return { header: header({ back: true, title: '비밀번호 변경' }), cls: 'narrow', body: `${fld('pw-new', '새 비밀번호 (8자 이상)', txt('pw-new', '', 'password', 'autocomplete="new-password"'))}${fld('pw-new2', '새 비밀번호 확인', txt('pw-new2', '', 'password', 'autocomplete="new-password"'))}<div class="btns"><button class="btn primary block" data-a="changePw">변경</button></div><div class="demo">비밀번호를 잊어버렸다면 관리자에게 Supabase에서 재설정을 요청하세요. (이메일 재설정은 메일 발송 설정이 필요합니다.)</div>` };
 }
 
-Object.assign(PAGES, { admin: adminHomePage, adminPeople: adminPeoplePage, adminPerson: adminPersonPage, adminOrgs: adminOrgsPage, adminOrg: adminOrgPage, adminTypes: adminTypesPage, adminType: adminTypePage, adminHolidays: adminHolidaysPage, adminRules: adminRulesPage, adminGeo: adminGeoPage, adminSite: adminSitePage, adminReport: adminReportPage, adminAudit: adminAuditPage, pw: pwPage, adminTheme: adminThemePage });
+Object.assign(PAGES, { admin: adminHomePage, adminPeople: adminPeoplePage, adminPerson: adminPersonPage, adminOrgs: adminOrgsPage, adminOrg: adminOrgPage, adminTypes: adminTypesPage, adminType: adminTypePage, adminHolidays: adminHolidaysPage, adminRules: adminRulesPage, adminGeo: adminGeoPage, adminSite: adminSitePage, adminReport: adminReportPage, adminAudit: adminAuditPage, pw: pwPage, adminTheme: adminThemePage, adminCompany: adminCompanyPage });
 
 /* ----- 동작 ----- */
 const need = () => { if (!isAdmin()) throw new ApiError(403, { message: 'forbidden' }); };
@@ -1958,6 +2001,13 @@ Object.assign(A, {
     await saveSetting('signup_policy', { allowed_domains: doms }); render(); toast('저장했습니다.');
   }),
 
+  saveCompany: () => guard(async () => {
+    need(); const name = val('co-name').trim(); if (!name) return toast('회사명을 입력해 주세요.');
+    await saveSetting('company', { name });
+    const root = S.orgs.find((o) => !o.parent_id);
+    if (isOn('co-root') && root && root.name !== name) { await send('PATCH', 'org_units', `id=eq.${root.id}`, { name }); root.name = name; }
+    syncCompany(); render(); toast('저장했습니다.');
+  }),
   saveGeo: () => guard(async () => {
     need(); const rad = Number(val('gf-rad')), acc = Number(val('gf-acc')); if (!(rad >= 10) || !(acc >= 10)) return toast('반경과 오차는 10m 이상으로 입력해 주세요.');
     await saveSetting('geofence', { enabled: isOn('gf-on'), radius_m: Math.round(rad), max_accuracy_m: Math.round(acc), apply_in: isOn('gf-in'), apply_out: isOn('gf-out') }); render(); toast('저장했습니다.');
@@ -2195,14 +2245,15 @@ function orgDetailPage(p) {
   const ms = people.filter((x) => x.org_id === o.id && x.id !== o.head_id).sort((a, b) => a.name.localeCompare(b.name));
   const subs = S.orgs.filter((x) => x.parent_id === o.id).sort((a, b) => (a.sort - b.sort) || a.name.localeCompare(b.name));
   const path = []; for (let c = o; c; c = S.orgs.find((x) => x.id === c.parent_id)) path.unshift(c.name);
-  return { header: header({ back: true, title: o.name }), cls: 'narrow', body: `<div class="muted small" style="padding:0 4px 10px">${esc(path.join(' › '))}</div>
+  const editBtn = isAdmin() ? `<div class="btns" style="margin:0 0 12px"><button class="btn sm line" data-a="orgEdit" data-id="${o.id}">이름·정보 수정 (관리자 기능)</button></div>` : '';
+  return { header: header({ back: true, title: o.name }), cls: 'narrow', body: `<div class="muted small" style="padding:0 4px 10px">${esc(path.join(' › '))}</div>${editBtn}
     <div class="card flush"><div class="kv" style="padding:14px 16px"><b>${esc(o.head_title)}</b><span>${head ? esc(head.name) : '공석'}</span></div>
       ${ms.map((x) => `<div class="kv" style="padding:14px 16px;border-top:1px solid var(--line)"><span>${esc(x.name)}</span></div>`).join('')}${!head && !ms.length ? '<div class="empty">소속 직원이 없습니다.</div>' : ''}</div>
     ${subs.length ? `<div class="sect" style="border:1px solid var(--line);border-radius:10px 10px 0 0">하위 조직</div><div class="card flush" style="border-radius:0 0 10px 10px">${subs.map((x) => `<button class="rowbtn" style="font-weight:500;border-top:1px solid var(--line)" data-a="orgDetail" data-id="${x.id}"><span>${esc(x.name)}</span><span class="chev">${ico('chev')}</span></button>`).join('')}</div>` : ''}` };
 }
 PAGES.orgchart = orgChartPage; PAGES.orgdetail = orgDetailPage;
 function extraInput(i, e) {
-  if (i === 'tfq') { S.team.q = e.target.value; const box = $('tflist'); if (box) box.innerHTML = tfListHtml(); return true; }
+  if (i === 'tfq') { S.team.q = e.target.value; const box = $('tflist'); if (box) box.innerHTML = peopleListHtml(); return true; }
   if (i !== 'orgq') return false;
   S.orgq = e.target.value; const box = $('orgl'); if (box) box.innerHTML = orgListHtml(); return true;
 }
@@ -2253,7 +2304,7 @@ const hashStr = (v) => { let h = 0; for (const c of String(v)) h = (h * 31 + c.c
 const pcolor = (id) => TPAL[hashStr(id) % TPAL.length];
 const isDesk = () => typeof window !== 'undefined' && window.innerWidth >= 900;
 const fmtHM = (m) => { m = Math.round(m); if (m <= 0) return '0m'; const h = Math.floor(m / 60), r = m % 60; return h ? `${h}h${r ? ` ${r}m` : ''}` : `${r}m`; };
-function newTeamState() { return { view: null, day: null, y: null, m: null, from: null, to: null, rows: null, people: [], sel: null, org: 'all', showWork: true, showLeave: true, rng: null, fix: false, statDate: null, q: '', open: new Set() }; }
+function newTeamState() { return { view: null, day: null, y: null, m: null, from: null, to: null, rows: null, people: [], sel: null, org: 'all', showWork: true, showLeave: true, rng: null, fix: false, statDate: null, q: '', open: new Set(), pop: null, adv: false }; }
 S.team = newTeamState();
 
 async function loadTeam() {
@@ -2263,7 +2314,7 @@ async function loadTeam() {
   const [a, b] = gridRange({ y: T.y, m: T.m });
   const rows = await rpc('team_schedule', { p_from: a, p_to: b });
   T.from = a; T.to = b; T.rows = rows;
-  T.people = rows.filter((r) => r.kind === 'person').map((r) => ({ id: r.user_id, name: r.name, org_id: r.org_id })).sort((x, y) => x.name.localeCompare(y.name));
+  T.people = rows.filter((r) => r.kind === 'person').map((r) => ({ id: r.user_id, name: r.name, org_id: r.org_id, role: r.role })).sort((x, y) => x.name.localeCompare(y.name));
   if (!T.sel) {
     const mine = T.people.filter((p) => p.org_id === S.me.org_id).map((p) => p.id), dflt = mine.length >= 2 ? mine : T.people.slice(0, 15).map((p) => p.id);
     const v = await loadTeamPrefs(), visible = new Set(T.people.map((p) => p.id));
@@ -2347,13 +2398,44 @@ function teamScreen() {
   }
   const main = `<div class="tmain"><div class="tbar"><div class="tnav"><button class="ib sq" data-a="teamNav" data-n="-1" aria-label="이전">${ico('back')}</button><button class="ib sq" data-a="teamNav" data-n="1" aria-label="다음">${ico('chev')}</button><button class="btn sm" data-a="teamToday">오늘</button><h2 class="ttl">${title}</h2></div>
       <div class="tact"><button class="btn sm green" data-a="leaveNew">✈ 휴가 생성 요청</button><button class="btn sm blue" data-a="schedNew">근무일정 생성 요청</button><button class="btn sm line" data-a="schedNew">근무일정 수정 요청</button></div></div>
-    <div class="tbar2"><div class="l"><button class="btn sm" data-a="sheet" data-k="teamFilter">${count} 선택됨 ▾</button><button class="btn sm" data-a="sheet" data-k="teamFilter">필터 (${nFilter}) ▾</button></div>
+    <div class="tbar2"><div class="l"><div class="popwrap ${T.pop === 'people' ? 'open' : ''}"><button class="btn sm" data-a="teamPop" data-k="people" aria-haspopup="dialog" aria-expanded="${T.pop === 'people'}">${count} 선택됨 ▾</button>${T.pop === 'people' ? peoplePop() : ''}</div><div class="popwrap ${T.pop === 'filter' ? 'open' : ''}"><button class="btn sm" data-a="teamPop" data-k="filter" aria-haspopup="dialog" aria-expanded="${T.pop === 'filter'}">필터 (${nFilter}) ▾</button>${T.pop === 'filter' ? filterPop() : ''}</div></div>
       <div class="seg3" role="group" aria-label="보기">${[['day', '일'], ['week', '주'], ['month', '월']].map(([k, l]) => `<button class="${view === k ? 'on' : ''}" data-a="teamView" data-k="${k}" aria-pressed="${view === k}">${l}</button>`).join('')}</div></div>${cal}</div>`;
-  return { header: header({ title: '스케줄' }), cls: 'wide', body: `<div class="tgrid">${main}${teamSide(T)}</div>` };
+  return { header: header({ title: '스케줄' }), cls: 'wide', body: `${T.pop ? '<div class="popbd" data-a="teamPopClose"></div>' : ''}<div class="tgrid">${main}${teamSide(T)}</div>` };
 }
 TABS.team = teamScreen;
 
-/* ----- 팀 필터: 조직 트리 + 사람 선택 ----- */
+/* ----- 팀 스케줄: 사용자 선택 드롭다운 (검색 · 본인 · 모두 선택 · 권한별 묶음) ----- */
+const ROLE_GROUPS = ['관리자', '조직장', '구성원'];
+function teamShownPeople() {
+  const T = S.team, q = (T.q || '').trim().toLowerCase();
+  if (!q) return T.people.slice();
+  const orgIds = new Set(); for (const o of S.orgs) if (o.name.toLowerCase().includes(q)) orgIdsUnder(o.id).forEach((id) => orgIds.add(id));      // 조직 이름이 맞으면 하위 조직의 사람 전부
+  return T.people.filter((p) => p.name.toLowerCase().includes(q) || orgIds.has(p.org_id));
+}
+function peopleListHtml() {
+  const T = S.team;
+  if (T.adv) return tfListHtml();
+  const list = teamShownPeople(), heads = new Set(S.orgs.map((o) => o.head_id).filter(Boolean)), q = (T.q || '').trim();
+  const grp = (p) => (p.role === 'admin' ? 0 : heads.has(p.id) ? 1 : 2), n = list.filter((p) => T.sel.has(p.id)).length, st = !list.length ? 'off' : n === list.length ? 'on' : n ? 'part' : 'off';
+  let h = `<button class="pkrow all" data-a="teamPickAll" role="checkbox" aria-checked="${st === 'on' ? 'true' : st === 'part' ? 'mixed' : 'false'}"><span class="cbs ${st}"></span><b>${q ? '검색 결과 모두 선택' : '모두 선택'}</b><span class="muted small">${list.length}명</span></button>`;
+  for (let g = 0; g < 3; g++) {
+    const ps = list.filter((p) => grp(p) === g).sort((a, b) => a.name.localeCompare(b.name)); if (!ps.length) continue;
+    h += `<div class="pkhd">${ROLE_GROUPS[g]}</div>${ps.map((p) => `<button class="pkrow" data-a="teamPick" data-id="${p.id}" role="checkbox" aria-checked="${T.sel.has(p.id)}"><span class="cbs ${T.sel.has(p.id) ? 'on' : 'off'}"></span><i class="tdot" style="background:${pcolor(p.id)}"></i><b>${esc(p.name)}</b><span class="muted">${esc(orgOf(p.org_id)?.name ?? '')}</span></button>`).join('')}`;
+  }
+  return h + (list.length ? '' : '<div class="empty">검색 결과가 없습니다.</div>');
+}
+function peoplePop() {
+  const T = S.team;
+  return `<div class="pop pp" role="dialog" aria-label="표시할 사용자 선택"><div class="ppsearch"><div class="searchbox"><input id="tfq" type="search" data-i="tfq" value="${esc(T.q)}" placeholder="이름 또는 조직 검색" aria-label="이름 또는 조직 검색" autocomplete="off"></div><button class="btn sm" data-a="teamMe">본인</button></div>
+    <div class="ppadv"><button class="lnk" data-a="teamAdv" aria-pressed="${T.adv}">${T.adv ? '− 목록으로 보기' : '+ 고급 필터'}</button><span class="hlp" tabindex="0" role="img" aria-label="도움말" title="고급 필터에서는 조직을 체크해 하위 조직의 모든 사람을 한 번에 선택할 수 있습니다.">?</span></div>
+    <div class="tflist" id="tflist">${peopleListHtml()}</div></div>`;
+}
+function filterPop() {
+  const T = S.team;
+  return `<div class="pop pf" role="dialog" aria-label="표시 항목"><div class="pkhd">표시 항목</div><label class="pkrow"><input type="checkbox" data-a="teamToggle" data-k="showWork" ${T.showWork ? 'checked' : ''}><b>근무일정</b></label><label class="pkrow"><input type="checkbox" data-a="teamToggle" data-k="showLeave" ${T.showLeave ? 'checked' : ''}><b>휴가</b></label></div>`;
+}
+
+/* ----- 팀 필터: 조직 트리 + 사람 선택 (고급 필터) ----- */
 const cbx = (st, action, id) => `<button class="cbx ${st}" role="checkbox" aria-checked="${st === 'on' ? 'true' : st === 'part' ? 'mixed' : 'false'}" data-a="${action}" data-id="${id}"></button>`;
 function tfIds(orgId) {
   const T = S.team, ids = orgId === '' ? [''] : orgIdsUnder(orgId);
@@ -2388,21 +2470,13 @@ function extraSheet2(sh, wrap) {
     return wrap(`<div class="sh" style="font-weight:700;color:var(--text)">화면 테마</div><div style="padding:0 16px 8px"><div class="muted small" style="margin-bottom:10px">내 기기에서만 적용됩니다. 회사 기본: ${esc((THEMES.find((t) => t.id === co) || THEMES[0]).name)}</div>
       <div class="themegrid sm">${themeCard({ id: 'company', name: '회사 기본값 따르기', desc: '관리자가 정한 테마', sw: (THEMES.find((t) => t.id === co) || THEMES[0]).sw }, !mine || !validTheme(mine), 'themeUser')}${THEMES.map((t) => themeCard(t, mine === t.id, 'themeUser')).join('')}</div></div>${close}`);
   }
-  if (sh.k === 'teamFilter') {
-    const T = S.team, wrapTf = (inner) => `<div class="sheetbg" data-a="closeSheet"><div class="sheet tf" role="dialog" aria-modal="true" data-stop="1">${inner}</div></div>`;
-    return wrapTf(`<div class="sh" style="font-weight:700;color:var(--text)">필터 · 표시할 사용자</div><div style="padding:0 16px 8px">
-      <div class="searchbox" style="margin:0 0 10px"><input id="tfq" type="search" data-i="tfq" value="${esc(T.q)}" placeholder="조직 또는 이름 검색" aria-label="조직 또는 이름 검색" autocomplete="off"></div>
-      <div class="tfbar"><span><b>${T.sel.size}</b>명 선택됨</span><span class="tfq"><button class="btn sm" data-a="teamAll">전체 선택</button><button class="btn sm" data-a="teamMine">내 조직</button><button class="btn sm" data-a="teamNone">모두 해제</button></span></div>
-      <div class="tfopt"><label><input type="checkbox" data-a="teamToggle" data-k="showWork" ${T.showWork ? 'checked' : ''}> 근무일정 표시</label><label><input type="checkbox" data-a="teamToggle" data-k="showLeave" ${T.showLeave ? 'checked' : ''}> 휴가 표시</label></div></div>
-      <div class="tflist" id="tflist">${tfListHtml()}</div>${close}`);
-  }
   return extraSheetBase(sh, wrap);
 }
 function resolveCompanyTheme() { const co = (S.settings && S.settings.theme && S.settings.theme.default) || lsGet('hr_theme_company'); return validTheme(co) ? co : 'light'; }
 
 /* ----- 동작: 테마 · 팀 스케줄 ----- */
 const keepScroll = (sel, fn) => { let st = 0; try { const b = document.querySelector(sel); st = b ? b.scrollTop : 0; } catch (e) { /* */ } fn(); try { const b = document.querySelector(sel); if (b) b.scrollTop = st; } catch (e) { /* */ } };
-function teamChanged() { saveTeamPrefs(); keepScroll('.sheet .tflist', render); }
+function teamChanged() { saveTeamPrefs(); keepScroll('.pop .tflist', render); }
 async function teamGoto(d, ym) {
   const T = S.team, y = ym ? ym.y : +d.slice(0, 4), m = ym ? ym.m : +d.slice(5, 7), changed = y !== T.y || m !== T.m || d < T.from || d > T.to;
   T.day = d; T.y = y; T.m = m;
@@ -2427,14 +2501,32 @@ Object.assign(A, {
   teamView: (e) => { S.team.view = e.k; lsSet('hr_team_view', e.k); render(); },
   teamDay: (e) => { S.team.day = e.d; if (!isDesk()) S.team.view = 'day'; render(); },
   teamPick: (e) => { const T = S.team; if (T.sel.has(e.id)) T.sel.delete(e.id); else T.sel.add(e.id); teamChanged(); },
+  teamPickAll: () => { const T = S.team, list = teamShownPeople(), all = list.length > 0 && list.every((p) => T.sel.has(p.id)); for (const p of list) { if (all) T.sel.delete(p.id); else T.sel.add(p.id); } teamChanged(); },
+  teamMe: () => { const T = S.team; if (T.people.some((p) => p.id === S.me.id)) { T.sel = new Set([S.me.id]); teamChanged(); } else toast('내 일정은 이 목록에 없습니다.'); },
+  teamAdv: () => { const T = S.team; T.adv = !T.adv; keepScroll('.pop .tflist', render); },
+  teamPop: (e) => { const T = S.team; T.pop = T.pop === e.k ? null : e.k; T.q = ''; T.adv = false; render(); try { const i = document.getElementById('tfq'); if (i && i.focus) i.focus(); } catch (er) { /* 화면 없는 환경 */ } },
+  teamPopClose: () => { S.team.pop = null; render(); },
   teamOrgToggle: (e) => { const T = S.team, ids = tfIds(e.id), all = ids.length > 0 && ids.every((id) => T.sel.has(id)); for (const id of ids) { if (all) T.sel.delete(id); else T.sel.add(id); } teamChanged(); },
-  teamOpen: (e) => { const T = S.team; if (T.open.has(e.id)) T.open.delete(e.id); else T.open.add(e.id); keepScroll('.sheet .tflist', render); },
+  teamOpen: (e) => { const T = S.team; if (T.open.has(e.id)) T.open.delete(e.id); else T.open.add(e.id); keepScroll('.pop .tflist', render); },
   teamAll: () => { const T = S.team; T.sel = new Set(T.people.map((p) => p.id)); teamChanged(); },
   teamMine: () => { const T = S.team; T.sel = new Set(T.people.filter((p) => p.org_id === S.me.org_id).map((p) => p.id)); teamChanged(); },
   teamNone: () => { S.team.sel = new Set(); teamChanged(); },
   teamToggle: (e, ev) => { S.team[e.k] = !!(ev && ev.target && ev.target.checked); teamChanged(); },
 });
 syncTheme();
+
+/* ---------- 회사명 ---------- */
+const companyName = () => ((S.settings && S.settings.company && S.settings.company.name) || lsGet('hr_company') || '근태·휴가');
+function syncCompany() {
+  const n = S.settings && S.settings.company && S.settings.company.name;
+  if (n) lsSet('hr_company', n);
+  try { document.title = companyName(); } catch (e) { /* 화면이 없는 환경 */ }
+}
+A.orgEdit = (e) => guard(async () => { need(); await ADM_LOAD.adminOrgs(); S.sheet = null; push('adminOrg', { id: e.id }); });
+(function escClosesPop() {
+  if (typeof document === 'undefined' || !document.addEventListener) return;
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && S.team && S.team.pop) { S.team.pop = null; render(); } });
+})();
 
 /* ---------- PC(900px 이상) 전용 화면 ---------- */
 // 폰 화면을 가운데에 놓는 대신, PC에서는 넓은 화면을 쓰는 구성으로 다시 그린다. 데이터와 동작은 폰 화면과 같다.
@@ -2556,8 +2648,8 @@ function reportDesk() {
 DESK.pages.report = reportDesk;
 
 /* ----- 관리자: 왼쪽 메뉴가 있는 관리 화면 ----- */
-const ADMIN_NAV = [['signups', '가입 요청'], ['adminPeople', '직원 관리'], ['adminOrgs', '조직 관리'], ['adminTypes', '휴가 유형'], ['adminHolidays', '공휴일'], ['adminRules', '근무·출근·연차 규칙'], ['adminGeo', '위치 제한'], ['adminTheme', '화면 테마'], ['adminReport', '월 근태 집계 · CSV'], ['adminAudit', '변경 이력']];
-const ADMIN_GROUP = { admin: null, signups: 'signups', adminPeople: 'adminPeople', adminPerson: 'adminPeople', adminOrgs: 'adminOrgs', adminOrg: 'adminOrgs', adminTypes: 'adminTypes', adminType: 'adminTypes', adminHolidays: 'adminHolidays', adminRules: 'adminRules', adminGeo: 'adminGeo', adminSite: 'adminGeo', adminTheme: 'adminTheme', adminReport: 'adminReport', adminAudit: 'adminAudit' };
+const ADMIN_NAV = [['signups', '가입 요청'], ['adminPeople', '직원 관리'], ['adminOrgs', '조직 관리'], ['adminCompany', '회사 정보'], ['adminTypes', '휴가 유형'], ['adminHolidays', '공휴일'], ['adminRules', '근무·출근·연차 규칙'], ['adminGeo', '위치 제한'], ['adminTheme', '화면 테마'], ['adminReport', '월 근태 집계 · CSV'], ['adminAudit', '변경 이력']];
+const ADMIN_GROUP = { admin: null, signups: 'signups', adminPeople: 'adminPeople', adminPerson: 'adminPeople', adminOrgs: 'adminOrgs', adminOrg: 'adminOrgs', adminCompany: 'adminCompany', adminTypes: 'adminTypes', adminType: 'adminTypes', adminHolidays: 'adminHolidays', adminRules: 'adminRules', adminGeo: 'adminGeo', adminSite: 'adminGeo', adminTheme: 'adminTheme', adminReport: 'adminReport', adminAudit: 'adminAudit' };
 DESK.wrap = function (top, inner) {
   if (!top || !(top.name in ADMIN_GROUP) || !isAdmin()) return inner === undefined ? false : inner;
   if (inner === undefined) return true;
