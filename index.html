@@ -472,6 +472,7 @@ label.pkrow{cursor:pointer}
 <script>
 /* 공개용 설정: Project URL과 publishable(anon) 키만 넣는다. secret/service_role 키와 DB 비밀번호는 절대 넣지 않는다. */
 window.APP_CONFIG = { url: 'https://zqfvntplsqftbkfewqsk.supabase.co', key: 'sb_publishable_bXeTU9omjAxUzUijyNzEkg_JmrTo-8v' };
+window.APP_BUILD = '2026-11-04 14:51';
 </script>
 <script>
 /* ---- dates.js ---- */
@@ -1296,7 +1297,7 @@ function renderSheet() {
       <div style="padding:0 20px 14px"><b style="font-size:18px">${esc(S.me.name)}</b><div class="muted small">${esc(orgOf(S.me.org_id)?.name ?? '소속 없음')}${S.me.role === 'admin' ? ' · 관리자' : ''}</div></div>
       ${S.me.role === 'admin' ? `<button class="si" data-a="go" data-k="admin">관리자 메뉴</button><button class="si" data-a="signups">가입 요청 (${signupCount()})</button>` : ''}
       <button class="si" data-a="tab" data-k="team">팀 스케줄</button><button class="si" data-a="orgOpen">조직도</button><button class="si" data-a="reportOpen">내 리포트</button><button class="si" data-a="sheet" data-k="theme">화면 테마</button><button class="si" data-a="go" data-k="pw">비밀번호 변경</button>
-      <button class="si" data-a="reload">새로고침</button><button class="si" data-a="logout">로그아웃</button><button class="si" data-a="closeSheet">닫기</button></div></div>`;
+      <button class="si" data-a="reload">새로고침</button><button class="si" data-a="logout">로그아웃</button><button class="si" data-a="closeSheet">닫기</button><div class="muted small" style="padding:10px 20px 0">앱 버전 ${esc(typeof APP_BUILD === 'string' ? APP_BUILD : (window.APP_BUILD || '-'))}</div></div></div>`;
   }
   return '';
 }
@@ -1883,7 +1884,7 @@ function adminStatusPage() {
     body = `<div class="card"><b>${bad.length ? `${bad.length}개 항목이 적용되지 않았습니다.` : '모든 업데이트가 적용되어 있습니다.'}</b>${bad.length ? '<div class="muted small" style="margin-top:6px">SQL 14번을 한 번 실행하면 SQL 14 표시 항목이 모두 적용됩니다. 07, 08, 10, 11은 해당 번호의 SQL을 실행하세요.</div>' : ''}<div class="btns"><button class="btn" data-a="statusReload">다시 확인</button></div></div>
       <div class="card flush">${STATUS_ITEMS.map(([k, l, sql]) => `<div class="kv" style="padding:14px 16px;border-top:1px solid var(--line)"><span>${esc(l)}</span><span>${st[k] ? '<span class="chip ok">적용됨</span>' : `<span class="chip no">적용 필요</span> <span class="muted small">${sql}</span>`}</span></div>`).join('')}</div>`;
   }
-  return { header: header({ back: true, title: '시스템 점검' }), cls: 'narrow', body };
+  return { header: header({ back: true, title: '시스템 점검' }), cls: 'narrow', body: `<div class="muted small" style="padding:0 4px 10px">앱 버전 ${esc(window.APP_BUILD || '-')} · 이 시각이 최신 파일의 시각과 같아야 새 버전입니다.</div>${body}` };
 }
 
 /* ----- 회사 정보 (회사명) ----- */
