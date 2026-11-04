@@ -7,6 +7,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<script>
+(function(){var t='light';try{var m=localStorage.getItem('hr_theme')||localStorage.getItem('hr_theme_company')||'light';if(/^(light|auto|dark|ocean|forest|sunset|violet|graphite)$/.test(m))t=m;}catch(e){}try{document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
+</script>
 <style>
 :root{
   --bg:#f2f3f5;--card:#fff;--text:#1b1f27;--muted:#6a7280;--line:#e4e6eb;
@@ -15,12 +18,13 @@
   --teal:#0f9d94;--track:#e3e5ea;--today:#e9f1ff;--dim:rgba(10,14,20,.5);--off:#f5f6f8;
   box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
 }
+/* ---- 테마: data-theme = light(기본) | auto(기기 설정 따름) | dark | ocean | forest | sunset | violet | graphite ---- */
 @media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#0f1115;--card:#181b22;--text:#eceef3;--muted:#98a0ad;--line:#2a2f3a;
-    --primary:#4c9aff;--primary-ink:#06101f;--nav:#142a47;--nav-ink:#8fa3bf;--nav-on:#fff;
-    --green:#5fd18a;--green-bg:#17301f;--red:#ff7b7b;--amber:#f5c15a;--amber-bg:#3a2e12;
-    --teal:#33c6bb;--track:#2a2f3a;--today:#1b2a44;--dim:rgba(0,0,0,.65);--off:#14171d;
+  :root[data-theme="auto"]{
+  --bg:#0f1115;--card:#181b22;--text:#eceef3;--muted:#98a0ad;--line:#2a2f3a;
+  --primary:#4c9aff;--primary-ink:#06101f;--nav:#142a47;--nav-ink:#8fa3bf;--nav-on:#fff;
+  --green:#5fd18a;--green-bg:#17301f;--red:#ff7b7b;--amber:#f5c15a;--amber-bg:#3a2e12;
+  --teal:#33c6bb;--track:#2a2f3a;--today:#1b2a44;--dim:rgba(0,0,0,.65);--off:#14171d;
   }
 }
 :root[data-theme="dark"]{
@@ -29,6 +33,11 @@
   --green:#5fd18a;--green-bg:#17301f;--red:#ff7b7b;--amber:#f5c15a;--amber-bg:#3a2e12;
   --teal:#33c6bb;--track:#2a2f3a;--today:#1b2a44;--dim:rgba(0,0,0,.65);--off:#14171d;
 }
+:root[data-theme="ocean"]{--bg:#edf3fa;--text:#13202e;--muted:#5a6d82;--line:#d6e1ee;--primary:#0a6cd6;--nav:#0b4f91;--nav-ink:#c3d8ef;--today:#dcebfb;--off:#f3f7fc;--track:#dce6f2}
+:root[data-theme="forest"]{--bg:#eff5f0;--text:#15231b;--muted:#5b6f62;--line:#d7e4da;--primary:#1c8a4e;--nav:#1b5e3b;--nav-ink:#c4dccb;--today:#dcf1e3;--off:#f4f9f5;--track:#dbe8de}
+:root[data-theme="sunset"]{--bg:#faf2ea;--text:#26180f;--muted:#7a6454;--line:#ecdccb;--primary:#d4580a;--nav:#8f3a0e;--nav-ink:#f0cdb4;--today:#ffe8d2;--off:#fdf7f1;--track:#efe0d0}
+:root[data-theme="violet"]{--bg:#f4f1fb;--text:#1d172e;--muted:#6a6385;--line:#e0daf0;--primary:#6a42d4;--nav:#3f2b82;--nav-ink:#d0c6ef;--today:#e9e1ff;--off:#f8f6fd;--track:#e4def3}
+:root[data-theme="graphite"]{--bg:#f3f4f6;--text:#1a1d23;--muted:#666d79;--line:#dcdfe5;--primary:#323c4d;--nav:#262b33;--nav-ink:#b4bac4;--today:#e6e9ee;--off:#f7f8fa;--track:#e1e4ea}
 html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font-family:"Noto Sans KR",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.45;-webkit-text-size-adjust:100%}
@@ -40,7 +49,7 @@ button{cursor:pointer}
 .hdr .ttl{flex:1;font-weight:700;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hdr .logo{flex:1;font-weight:700;font-size:20px;letter-spacing:.2px;color:var(--nav)}
 :root[data-theme="dark"] .hdr .logo{color:var(--text)}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .hdr .logo{color:var(--text)}}
+@media (prefers-color-scheme: dark){:root[data-theme="auto"] .hdr .logo{color:var(--text)}}
 .ib{background:none;border:0;width:44px;height:44px;display:grid;place-items:center;border-radius:10px;position:relative}
 .ib:focus-visible,.btn:focus-visible,.tab:focus-visible,.cell:focus-visible,.rowbtn:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
 .ib svg{width:24px;height:24px}
@@ -64,7 +73,7 @@ h3{font-size:17px;margin:0}
 .chip.wait{background:var(--amber-bg);color:var(--amber)}
 .chip.no{background:#fde4e4;color:#b42323}
 :root[data-theme="dark"] .chip.no{background:#3b1c1c;color:#ff9b9b}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .chip.no{background:#3b1c1c;color:#ff9b9b}}
+@media (prefers-color-scheme: dark){:root[data-theme="auto"] .chip.no{background:#3b1c1c;color:#ff9b9b}}
 .chip.live{background:var(--today);color:var(--primary)}
 .btn{border:1px solid var(--line);background:var(--card);border-radius:5px;padding:0 16px;height:48px;font-weight:700}
 .btn.primary{background:var(--primary);border-color:var(--primary);color:var(--primary-ink)}
@@ -171,23 +180,24 @@ button.mcell:focus-visible{outline:2px solid var(--primary);outline-offset:-2px}
 /* PC / 넓은 화면: 왼쪽 메뉴 + 넓은 본문 */
 @media (min-width:900px){
   .app{max-width:none}
-  .shell{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh}
+  .shell{display:block;min-height:100vh}
   .content{min-width:0}
-  .side{display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh;background:var(--nav);color:var(--nav-ink);padding:20px 12px;overflow:auto}
-  .side .brand{color:#fff;font-weight:700;font-size:22px;padding:6px 12px 18px}
-  .side .navbtn{display:flex;align-items:center;gap:12px;width:100%;border:0;background:none;color:var(--nav-ink);padding:12px;border-radius:8px;font-size:15px;text-align:left}
-  .side .navbtn svg{width:22px;height:22px;flex:none}
-  .side .navbtn:hover{background:rgba(255,255,255,.08)}
-  .side .navbtn.on{background:rgba(255,255,255,.14);color:#fff;font-weight:700}
-  .side .navbtn:focus-visible{outline:2px solid #fff;outline-offset:2px}
-  .side .navbtn .badge{position:static;margin-left:auto}
-  .side .sidefoot{margin-top:auto;padding-top:14px;border-top:1px solid rgba(255,255,255,.18)}
-  .side .who{padding:6px 12px 10px;color:#fff}
-  .side .who .muted{color:var(--nav-ink)}
-  .side .navbtn.small{font-size:13px;padding:8px 12px}
+  .side{display:flex;flex-direction:row;align-items:stretch;gap:4px;position:sticky;top:0;z-index:45;height:60px;background:var(--card);color:var(--text);padding:0 24px;border-bottom:1px solid var(--line)}
+  .side .brand{display:flex;align-items:center;color:var(--primary);font-weight:700;font-size:22px;padding:0 28px 0 0}
+  .side nav.topnav{display:flex;gap:2px;align-items:stretch;height:60px}
+  .side .navbtn{display:flex;align-items:center;gap:6px;border:0;background:none;color:var(--text);padding:0 16px;height:60px;border-bottom:3px solid transparent;font-size:15px;white-space:nowrap}
+  .side .navbtn svg{display:none}
+  .side .navbtn:hover{color:var(--primary)}
+  .side .navbtn.on{color:var(--primary);font-weight:700;border-bottom-color:var(--primary)}
+  .side .navbtn:focus-visible{outline:2px solid var(--primary);outline-offset:-4px}
+  .side .navbtn .badge{position:static;margin-left:2px}
+  .side .sidefoot{margin-left:auto;display:flex;align-items:center;gap:8px}
+  .side .userbtn{border:1px solid var(--line);border-radius:20px;padding:0 16px;height:38px;align-self:center;border-bottom:1px solid var(--line)}
+  .sheetbg:has(.drawer){align-items:flex-start}
+  .drawer{position:fixed;inset:64px 20px auto auto;width:300px;border-radius:12px;padding:14px 0;border:1px solid var(--line);box-shadow:0 8px 28px rgba(0,0,0,.2);max-height:calc(100vh - 90px)}
   .tabbar,.menu-btn,.hdr .logo{display:none}
   .onlydesk{display:block}
-  .hdr{padding:0 24px}
+  .hdr{padding:0 24px;top:60px}
   .main{max-width:1120px;margin:0 auto;padding:24px 28px 48px}
   .main.narrow{max-width:680px}
   .main.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px;align-items:start}
@@ -195,7 +205,7 @@ button.mcell:focus-visible{outline:2px solid var(--primary);outline-offset:-2px}
   .bleed{margin:0}
   .split{display:grid;grid-template-columns:minmax(0,2fr) minmax(300px,1fr);gap:16px;align-items:start}
   .split-a{border:1px solid var(--line);border-radius:6px;overflow:hidden}
-  .split-b{max-height:calc(100vh - 130px);overflow:auto;position:sticky;top:76px;border:1px solid var(--line);border-radius:6px}
+  .split-b{max-height:calc(100vh - 190px);overflow:auto;position:sticky;top:136px;border:1px solid var(--line);border-radius:6px}
   .mcell{min-height:108px;padding:6px 3px}
   .ev{font-size:12px;line-height:19px;margin:3px 2px 0;padding:0 4px}
   .cell{min-height:64px}
@@ -209,7 +219,7 @@ button.mcell:focus-visible{outline:2px solid var(--primary);outline-offset:-2px}
 .login{max-width:380px;margin:0 auto;padding:calc(64px + env(safe-area-inset-top,0px)) 20px 40px}
 .login h1{font-size:26px;margin:0 0 6px;color:var(--nav)}
 :root[data-theme="dark"] .login h1{color:var(--text)}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .login h1{color:var(--text)}}
+@media (prefers-color-scheme: dark){:root[data-theme="auto"] .login h1{color:var(--text)}}
 .login .card{padding:20px}
 .login label{display:block;font-weight:700;margin:14px 0 6px}
 .login input{width:100%;border:1px solid var(--line);background:var(--card);border-radius:5px;padding:12px;font-size:16px}
@@ -261,6 +271,82 @@ button.rrow{cursor:pointer}.rrow span{display:inline-flex;align-items:center;gap
 .orgrow{display:flex;align-items:center;justify-content:space-between;width:100%;text-align:left;background:var(--card);border:0;border-top:1px solid var(--line);padding:14px 16px;font:inherit;color:inherit;cursor:pointer}
 .orgrow:first-child{border-top:0}
 .orgn{font-size:17px;font-weight:600}
+
+
+/* 팀 스케줄 */
+.main.wide{max-width:1600px}
+.tgrid{display:block}
+.tside{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;margin-top:14px}
+.tside h3{margin:0 0 12px;font-size:17px}
+.tside .rng{display:flex;gap:6px;align-items:center}
+.tside .rng input[type=date]{flex:1;min-width:0;border:1px solid var(--line);border-radius:6px;padding:7px 8px;background:var(--card);color:var(--text);font-size:14px}
+.tside .fix{display:flex;gap:8px;align-items:center;margin:10px 0 6px;color:var(--muted);font-size:14px}
+.tside .row{display:flex;justify-content:space-between;padding:9px 2px}
+.tside .row b{font-weight:400}
+.tside .row span{font-weight:700}
+.tside hr{border:0;border-top:1px solid var(--line);margin:18px 0}
+.tside table{width:100%;border-collapse:collapse;margin-top:10px}
+.tside th{font-weight:400;color:var(--muted);font-size:13px;text-align:center;padding:8px 0}
+.tside th:first-child,.tside td:first-child{text-align:left}
+.tside td{padding:8px 0;font-weight:500;text-align:center}
+.tside td.g{color:var(--teal);font-weight:700}
+.tbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin:0 0 12px}
+.tnav{display:flex;align-items:center;gap:6px}
+.tnav .ttl{margin:0 0 0 12px;font-size:24px}
+.ib.sq{border:1px solid var(--line);border-radius:6px;background:var(--card);width:38px;height:36px}
+.btn.sm{height:36px;padding:0 14px;font-size:14px}
+.tact{display:flex;gap:8px;flex-wrap:wrap}
+.btn.green{background:#13813a;border-color:#13813a;color:#fff}
+.btn.blue{background:var(--primary);border-color:var(--primary);color:var(--primary-ink)}
+.btn.line{background:var(--card);color:var(--primary);border:1.5px solid var(--primary)}
+.tbar2{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 12px;flex-wrap:wrap}
+.tbar2 .l{display:flex;gap:8px;flex-wrap:wrap}
+.seg3{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg3 button{border:0;background:var(--card);padding:0 14px;height:34px;font-size:14px;color:var(--text)}
+.seg3 button.on{background:var(--primary);color:var(--primary-ink);font-weight:700}
+.tcal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--card)}
+.tdow{padding:10px 0;text-align:center;color:var(--muted);font-size:14px;border-bottom:1px solid var(--line)}
+.tdow.sun{color:var(--red)}
+.tcell{display:block;width:100%;border:0;border-top:1px solid var(--line);border-left:1px solid var(--line);padding:8px 6px;min-height:76px;text-align:left;background:var(--card);font:inherit;color:inherit;cursor:pointer;overflow:hidden}
+.tcell:nth-child(7n+8){border-left:0}
+.tcell.other{background:var(--off);color:var(--muted)}
+.tcell:focus-visible{outline:2px solid var(--primary);outline-offset:-2px}
+.tdn{font-size:14px;font-weight:500;display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;border-radius:12px;padding:0 6px}
+.tdn.red{color:var(--red)}
+.tdn.today{background:var(--primary);color:var(--primary-ink);font-weight:700}
+.tev{display:none;font-size:12px;line-height:1.4;margin-top:6px;overflow-wrap:anywhere}
+.tev .tdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
+.tev b{font-weight:700}
+.tev .t{color:var(--muted);white-space:nowrap}
+.tev.lv{background:var(--green-bg);color:var(--green);padding:3px 5px;border-radius:3px}
+.tev.lv .t{color:var(--green);white-space:normal}
+.tcount{display:block;font-size:12px;color:var(--muted);margin-top:6px}
+.tcal.wk .tev{display:block}.tcal.wk .tcount{display:none}.tcal.wk .tcell{min-height:260px}
+.tday{background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.tday .tr{display:flex;align-items:center;gap:12px;padding:13px 16px;border-top:1px solid var(--line)}
+.tday .tr:first-child{border-top:0}
+.tday .tr b{min-width:84px}
+.tday .tr .t{color:var(--muted);margin-left:auto}
+.tday .tr.lv{background:var(--green-bg);color:var(--green)}
+.tday .tr.lv .t{color:var(--green)}
+@media (min-width:900px){
+  .tgrid{display:grid;grid-template-columns:340px minmax(0,1fr);gap:20px;align-items:start}
+  .tgrid .tside{margin:0;order:-1;position:sticky;top:76px}
+  .tcell{min-height:150px;padding:8px 8px}
+  .tev{display:block}.tcount{display:none}
+  .content:has(.main.wide)>.hdr{display:none}
+}
+/* 테마 선택 */
+.themegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+.themecard{display:flex;flex-direction:column;gap:8px;align-items:flex-start;text-align:left;background:var(--card);border:2px solid var(--line);border-radius:12px;padding:14px;cursor:pointer;color:var(--text);font:inherit}
+.themecard.on{border-color:var(--primary)}
+.themecard:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.swatch{display:flex;width:100%;height:34px;border-radius:8px;overflow:hidden;border:1px solid rgba(128,128,128,.35);padding:0;align-items:stretch;justify-content:flex-start}
+.swatch i{flex:1;display:block}
+.themegrid.sm{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.themegrid.sm .themecard{padding:10px;gap:6px}
+.themegrid.sm .swatch{height:24px}
+.themegrid.sm .muted{display:none}
 </style>
 </head>
 <body>
@@ -697,6 +783,7 @@ async function loadStatic() {
   const rule = rules.find((r) => r.effective_from <= S.today) || rules[0];
   if (rule) S.policy = { breakMinutes: rule.break_minutes, leaveHoursPerDay: rule.daily_minutes / 60, weeklyHolidayDow: rule.weekly_holiday_dow };
   S.exempt = ex.length > 0;
+  if (typeof syncTheme === 'function') syncTheme();
   return true;
 }
 async function loadRange(from, to) {
@@ -764,13 +851,11 @@ function tabbar() {
   const n = pendingCount();
   return `<nav class="tabbar" aria-label="하단 메뉴">${NAV.map(([k, l, i]) => `<button class="tab ${S.tab === k && !S.stack.length ? 'on' : ''}" data-a="tab" data-k="${k}">${ico(i)}<span>${l}</span>${k === 'requests' ? `<span class="badge ${n ? '' : 'gray'}">${n}</span>` : ''}</button>`).join('')}</nav>`;
 }
+const NAV_PC = [['home', '홈', 'home'], ['team', '스케줄', 'cal'], ['requests', '요청', 'inbox'], ['schedule', '월 근무', 'cal'], ['records', '출퇴근기록', 'clock'], ['leave', '휴가', 'plane']];
 function sidebar() {
   const n = pendingCount();
-  return `<aside class="side" aria-label="메뉴"><div class="brand">근태·휴가</div><nav>${NAV.map(([k, l, i]) => `<button class="navbtn ${S.tab === k && !S.stack.length ? 'on' : ''}" data-a="tab" data-k="${k}">${ico(i)}<span>${l}</span>${k === 'requests' ? `<span class="badge ${n ? '' : 'gray'}">${n}</span>` : ''}</button>`).join('')}</nav>
-    <nav><button class="navbtn" data-a="reportOpen">${ico('clock')}<span>내 리포트</span></button><button class="navbtn" data-a="orgOpen">${ico('menu')}<span>조직도</span></button></nav>
-    ${S.me.role === 'admin' ? `<nav><button class="navbtn" data-a="signups">${ico('inbox')}<span>가입 요청</span><span class="badge ${signupCount() ? '' : 'gray'}">${signupCount()}</span></button><button class="navbtn" data-a="go" data-k="admin">${ico('menu')}<span>관리자 메뉴</span></button></nav>` : ''}
-    <div class="sidefoot"><div class="who"><b>${esc(S.me.name)}</b><div class="muted small">${esc(orgOf(S.me.org_id)?.name ?? '소속 없음')}${S.me.role === 'admin' ? ' · 관리자' : ''}</div></div>
-    <button class="navbtn small" data-a="go" data-k="pw">비밀번호 변경</button><button class="navbtn small" data-a="logout">로그아웃</button></div></aside>`;
+  return `<aside class="side" aria-label="메뉴"><div class="brand">근태·휴가</div><nav class="topnav">${NAV_PC.map(([k, l]) => `<button class="navbtn ${S.tab === k && !S.stack.length ? 'on' : ''}" data-a="tab" data-k="${k}">${l}${k === 'requests' ? `<span class="badge ${n ? '' : 'gray'}">${n}</span>` : ''}</button>`).join('')}</nav>
+    <div class="sidefoot"><button class="navbtn userbtn" data-a="drawer" aria-haspopup="dialog">${esc(S.me.name)} ▾</button></div></aside>`;
 }
 const monthNav = (c, key) => `<div class="calhd"><button class="ib" data-a="mnav" data-k="${key}" data-n="-1" aria-label="이전 달">${ico('back')}</button><b>${c.m}월 ${c.y}</b><button class="ib" data-a="mnav" data-k="${key}" data-n="1" aria-label="다음 달">${ico('chev')}</button></div>`;
 const dowRow = () => `<div class="grid">${DOW.map((d, i) => `<div class="dw ${i === 0 ? 'sun' : ''}">${d}</div>`).join('')}</div>`;
@@ -916,7 +1001,7 @@ function requestsScreen() {
 function requestDetail(p) {
   const r = [...S.myLeave, ...S.myAtt, ...S.mySch, ...S.inboxLeave, ...S.inboxAtt, ...S.inboxSch].find((x) => x.id === p.id && x.kind === p.kind);
   if (!r) return { header: header({ back: true, title: '요청 상세' }), cls: 'narrow', body: '<div class="empty">요청을 찾을 수 없습니다.</div>' };
-  const mineReq = r.user_id === S.me.id, canDecide = r.status === 'pending' && r.approver_id === S.me.id && !mineReq;
+  const mineReq = r.user_id === S.me.id, canDecide = r.status === 'pending' && r.approver_id === S.me.id && (!mineReq || S.me.role === 'admin');
   const rec = (a, b) => (a ? `${hmSeoul(a)} - ${hmSeoul(b) ?? '근무 중'}` : '기록 없음');
   const rows = r.kind === 'schedule'
     ? `<div class="kv"><b>구분</b><span>${r.action === 'set' ? '등록·변경' : '삭제'} (${r.items.length}일)</span></div>${r.items.map((i) => `<div class="kv"><b>${md(i.date)} (${DOW[dayOfWeek(i.date)]})</b><span>${i.start ? `${i.start} - ${i.end}` : '삭제'}</span></div>`).join('')}`
@@ -932,7 +1017,7 @@ function requestDetail(p) {
     <div class="kv"><b>사유</b><span style="text-align:right;max-width:60%">${esc(r.reason)}</span></div>
     ${r.comment ? `<div class="kv"><b>의견</b><span>${esc(r.comment)}</span></div>` : ''}
     ${r.cancel_requested ? `<div class="kv"><b>취소 요청</b><span style="text-align:right;max-width:60%">${esc(r.cancel_reason || '')}</span></div>` : ''}
-    ${r.kind === 'leave' && r.cancel_requested && r.status === 'approved' && r.approver_id === S.me.id && !mineReq ? `<div class="btns"><button class="btn danger" data-a="decideCancel" data-id="${r.id}" data-v="rejected">취소 거절</button><button class="btn primary" data-a="decideCancel" data-id="${r.id}" data-v="approved">취소 승인</button></div>` : ''}
+    ${r.kind === 'leave' && r.cancel_requested && r.status === 'approved' && r.approver_id === S.me.id && (!mineReq || S.me.role === 'admin') ? `<div class="btns"><button class="btn danger" data-a="decideCancel" data-id="${r.id}" data-v="rejected">취소 거절</button><button class="btn primary" data-a="decideCancel" data-id="${r.id}" data-v="approved">취소 승인</button></div>` : ''}
     ${r.kind === 'leave' && mineReq && r.status === 'approved' && !r.cancel_requested && r.dates[0] > S.today ? `<div class="field"><label for="lc-reason">휴가 취소 요청 사유</label><input id="lc-reason" type="text" maxlength="200"></div><div class="btns"><button class="btn danger block" data-a="reqCancelLeave" data-id="${r.id}">휴가 취소 요청</button></div>` : ''}
     ${canDecide ? `<div class="btns"><button class="btn danger" data-a="decide" data-k="${r.kind}" data-id="${r.id}" data-v="rejected">반려</button><button class="btn primary" data-a="decide" data-k="${r.kind}" data-id="${r.id}" data-v="approved">승인</button></div>` : ''}
     ${mineReq && r.status === 'pending' ? `<div class="btns"><button class="btn danger block" data-a="cancel" data-k="${r.kind}" data-id="${r.id}">요청 취소</button></div>` : ''}</div>` };
@@ -1093,7 +1178,7 @@ function renderSheet() {
     return `<div class="sheetbg" style="justify-content:flex-start;align-items:stretch" data-a="closeSheet"><div class="drawer" role="dialog" aria-modal="true" data-stop="1">
       <div style="padding:0 20px 14px"><b style="font-size:18px">${esc(S.me.name)}</b><div class="muted small">${esc(orgOf(S.me.org_id)?.name ?? '소속 없음')}${S.me.role === 'admin' ? ' · 관리자' : ''}</div></div>
       ${S.me.role === 'admin' ? `<button class="si" data-a="go" data-k="admin">관리자 메뉴</button><button class="si" data-a="signups">가입 요청 (${signupCount()})</button>` : ''}
-      <button class="si" data-a="orgOpen">조직도</button><button class="si" data-a="reportOpen">내 리포트</button><button class="si" data-a="go" data-k="pw">비밀번호 변경</button>
+      <button class="si" data-a="tab" data-k="team">팀 스케줄</button><button class="si" data-a="orgOpen">조직도</button><button class="si" data-a="reportOpen">내 리포트</button><button class="si" data-a="sheet" data-k="theme">화면 테마</button><button class="si" data-a="go" data-k="pw">비밀번호 변경</button>
       <button class="si" data-a="reload">새로고침</button><button class="si" data-a="logout">로그아웃</button><button class="si" data-a="closeSheet">닫기</button></div></div>`;
   }
   return '';
@@ -1177,7 +1262,7 @@ async function loadSignupStatus() {
 async function doLogout(expired) {
   try { if (session && !expired) await fetch(CFG.url + '/auth/v1/logout', { method: 'POST', headers: { apikey: CFG.key, Authorization: `Bearer ${session.access_token}` } }); } catch (e) { /* 무시 */ }
   session = null; store.set(null);
-  Object.assign(S, { me: null, view: 'login', stack: [], sheet: null, tab: 'home', recs: {}, lv: {}, bal: null, myLeave: [], myAtt: [], inboxLeave: [], inboxAtt: [], loaded: new Set(), draft: null, adraft: null, signupReq: null, signups: [], sched: {}, mySch: [], inboxSch: [], sdraft: null, lvx: { date: null, tab: 'my', group: 'annual', grants: null, days: null }, rep: null, info: '', authMode: 'login', authError: expired ? '로그인 시간이 지났습니다. 다시 로그인해 주세요.' : '' });
+  Object.assign(S, { me: null, view: 'login', stack: [], sheet: null, tab: 'home', recs: {}, lv: {}, bal: null, myLeave: [], myAtt: [], inboxLeave: [], inboxAtt: [], loaded: new Set(), draft: null, adraft: null, signupReq: null, signups: [], sched: {}, mySch: [], inboxSch: [], sdraft: null, lvx: { date: null, tab: 'my', group: 'annual', grants: null, days: null }, rep: null, team: newTeamState(), info: '', authMode: 'login', authError: expired ? '로그인 시간이 지났습니다. 다시 로그인해 주세요.' : '' });
   render();
 }
 
@@ -1381,6 +1466,7 @@ async function tabLoad() {
   if (S.tab === 'schedule') { const [a, b] = gridRange(S.cal); await ensureRange(a, b); }
   if (S.tab === 'records') { const [a, b] = gridRange(S.rec); await ensureRange(a, b); }
   if (S.tab === 'requests') await loadRequests();
+  if (S.tab === 'team') await loadTeamAll();
   if (S.tab === 'leave') { await Promise.all([loadLeave(), loadRequests(), loadLeaveX()]); }
   render();
 }
@@ -1445,6 +1531,7 @@ const ADM_LOAD = {
     const [sites, ex, people] = await Promise.all([rest('geo_sites', 'select=*&order=name'), rest('geo_exempt', 'select=user_id'), rest('profiles', 'select=id,name,status&order=name'), loadSettingsFresh()]);
     S.adm.sites = sites; S.adm.exempt = new Set(ex.map((x) => x.user_id)); S.adm.people = people;
   },
+  adminTheme: async () => { await loadSettingsFresh(); },
   adminAudit: async () => { S.adm.audit = await rest('audit_log', 'select=*&order=id.desc&limit=100'); },
   adminReport: async () => { S.adm.rep = S.adm.rep || { y: +S.today.slice(0, 4), m: +S.today.slice(5, 7) }; await buildReport(); },
 };
@@ -1453,7 +1540,7 @@ const ADM_LOAD = {
 function adminHomePage() {
   const rows = [['signups', '가입 요청', `${signupCount()}건 대기`], ['adminPeople', '직원 관리', '소속·권한·상태, 연차, 일정 대리 등록'], ['adminOrgs', '조직 관리', '조직도와 조직장 (승인권자 후보의 기준)'],
     ['adminTypes', '휴가 유형', '유형·그룹, 연차 차감, 승인 범위'], ['adminHolidays', '공휴일', '대체공휴일 포함'], ['adminRules', '근무·출근·연차 규칙', '휴게, 출근 허용 시간, 연차 기준, 승인 정책'],
-    ['adminGeo', '위치 제한', '근무지, 반경, 제외 대상'], ['adminReport', '월 근태 집계 · CSV', '급여 정산용'], ['adminAudit', '변경 이력', '누가 무엇을 바꿨는지']];
+    ['adminGeo', '위치 제한', '근무지, 반경, 제외 대상'], ['adminTheme', '화면 테마', '회사 기본 색상 테마'], ['adminReport', '월 근태 집계 · CSV', '급여 정산용'], ['adminAudit', '변경 이력', '누가 무엇을 바꿨는지']];
   return { header: header({ back: true, title: '관리자 메뉴' }), cls: 'narrow', body: `<div class="card flush">${rows.map(([k, t, sub]) => `<button class="rowbtn" style="border-top:1px solid var(--line)" data-a="${k === 'signups' ? 'signups' : 'go'}" data-k="${k}"><div><div>${t}</div><div class="muted small" style="font-weight:400">${sub}</div></div><span class="chev">${ico('chev')}</span></button>`).join('')}</div>` };
 }
 
@@ -1658,12 +1745,19 @@ function adminAuditPage() {
   return { header: header({ back: true, title: '변경 이력' }), cls: 'narrow', body: `<div class="card flush">${rows.map((a) => `<div class="kv" style="padding:10px 16px;border-top:1px solid var(--line)"><span><b>${esc(TB[a.table_name] || a.table_name)}</b> ${OP[a.op] || a.op}<div class="muted small">${a.actor ? esc((person(a.actor) || {}).name || '사용자') : 'DB 직접 변경'}</div></span><span class="muted small">${kst(a.at)}</span></div>`).join('') || '<div class="empty">기록이 없습니다.</div>'}</div><div class="demo">최근 100건만 보여 줍니다.</div>` };
 }
 
+/* ----- 화면 테마 (회사 기본) ----- */
+function adminThemePage() {
+  const cur = (S.settings.theme || {}).default || 'light';
+  return { header: header({ back: true, title: '화면 테마' }), cls: 'narrow', body: `<div class="muted small" style="padding:0 4px 12px">직원 모두에게 적용되는 <b>회사 기본 테마</b>입니다. ☰ 메뉴 → 화면 테마에서 개인 테마를 고른 직원은 개인 설정이 우선합니다.</div>
+    <div class="themegrid">${THEMES.map((t) => themeCard(t, cur === t.id, 'themeCompany')).join('')}</div>` };
+}
+
 /* ----- 비밀번호 변경 ----- */
 function pwPage() {
   return { header: header({ back: true, title: '비밀번호 변경' }), cls: 'narrow', body: `${fld('pw-new', '새 비밀번호 (8자 이상)', txt('pw-new', '', 'password', 'autocomplete="new-password"'))}${fld('pw-new2', '새 비밀번호 확인', txt('pw-new2', '', 'password', 'autocomplete="new-password"'))}<div class="btns"><button class="btn primary block" data-a="changePw">변경</button></div><div class="demo">비밀번호를 잊어버렸다면 관리자에게 Supabase에서 재설정을 요청하세요. (이메일 재설정은 메일 발송 설정이 필요합니다.)</div>` };
 }
 
-Object.assign(PAGES, { admin: adminHomePage, adminPeople: adminPeoplePage, adminPerson: adminPersonPage, adminOrgs: adminOrgsPage, adminOrg: adminOrgPage, adminTypes: adminTypesPage, adminType: adminTypePage, adminHolidays: adminHolidaysPage, adminRules: adminRulesPage, adminGeo: adminGeoPage, adminSite: adminSitePage, adminReport: adminReportPage, adminAudit: adminAuditPage, pw: pwPage });
+Object.assign(PAGES, { admin: adminHomePage, adminPeople: adminPeoplePage, adminPerson: adminPersonPage, adminOrgs: adminOrgsPage, adminOrg: adminOrgPage, adminTypes: adminTypesPage, adminType: adminTypePage, adminHolidays: adminHolidaysPage, adminRules: adminRulesPage, adminGeo: adminGeoPage, adminSite: adminSitePage, adminReport: adminReportPage, adminAudit: adminAuditPage, pw: pwPage, adminTheme: adminThemePage });
 
 /* ----- 동작 ----- */
 const need = () => { if (!isAdmin()) throw new ApiError(403, { message: 'forbidden' }); };
@@ -1942,7 +2036,7 @@ function reportPage() {
 PAGES.report = reportPage;
 
 /* ----- 시트: 사용 내역 / 리포트 상세 / 설명 ----- */
-function extraSheet(sh, wrap) {
+function extraSheetBase(sh, wrap) {
   const close = '<button class="si" data-a="closeSheet">닫기</button>', item = (l, r) => `<div class="kv" style="padding:10px 20px;border-top:1px solid var(--line)"><span>${l}</span><span>${r}</span></div>`;
   if (sh.k === 'usedList') {
     const L = leaveX(S.lvx.date || S.today), rows = L.annualDays.slice().sort((a, b) => b.leave_date.localeCompare(a.leave_date));
@@ -1962,6 +2056,7 @@ function extraSheet(sh, wrap) {
   }
   return null;
 }
+function extraSheet(sh, wrap) { return extraSheet2(sh, wrap); }
 
 /* ----- 동작 ----- */
 Object.assign(C, {
@@ -2019,6 +2114,180 @@ Object.assign(A, {
   orgOpen: () => guard(async () => { const [orgs, dir] = await Promise.all([rest('org_units', 'select=id,name,parent_id,head_id,head_title,sort'), rest('directory', 'select=id,name,org_id,status')]); S.orgs = orgs; S.people = dir; S.orgq = ''; S.sheet = null; push('orgchart'); }),
   orgDetail: (e) => push('orgdetail', { id: e.id }),
 });
+
+/* ---------- 화면 테마 ---------- */
+const THEMES = [
+  { id: 'light', name: '라이트', desc: '밝은 기본 화면', sw: ['#f2f3f5', '#0b66e4', '#1f4272'] },
+  { id: 'auto', name: '시스템 설정 따르기', desc: '기기가 다크 모드면 어둡게', sw: ['#f2f3f5', '#4c9aff', '#0f1115'] },
+  { id: 'dark', name: '다크', desc: '어두운 화면', sw: ['#0f1115', '#4c9aff', '#142a47'] },
+  { id: 'ocean', name: '오션 블루', desc: '차분한 파랑', sw: ['#edf3fa', '#0a6cd6', '#0b4f91'] },
+  { id: 'forest', name: '포레스트 그린', desc: '편안한 초록', sw: ['#eff5f0', '#1c8a4e', '#1b5e3b'] },
+  { id: 'sunset', name: '선셋 오렌지', desc: '따뜻한 주황', sw: ['#faf2ea', '#d4580a', '#8f3a0e'] },
+  { id: 'violet', name: '바이올렛', desc: '부드러운 보라', sw: ['#f4f1fb', '#6a42d4', '#3f2b82'] },
+  { id: 'graphite', name: '그라파이트', desc: '절제된 회색', sw: ['#f3f4f6', '#323c4d', '#262b33'] },
+];
+const lsGet = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+const lsSet = (k, v) => { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { /* 저장 불가 환경 */ } };
+const validTheme = (id) => THEMES.some((t) => t.id === id);
+function resolveTheme() {
+  const mine = lsGet('hr_theme'); if (mine && validTheme(mine)) return mine;
+  const co = (S.settings && S.settings.theme && S.settings.theme.default) || lsGet('hr_theme_company');
+  return validTheme(co) ? co : 'light';
+}
+function applyTheme() {
+  const id = resolveTheme(), th = THEMES.find((t) => t.id === id);
+  try {
+    document.documentElement.setAttribute('data-theme', id);
+    let m = document.querySelector('meta[name="theme-color"]');
+    if (!m) { m = document.createElement('meta'); m.setAttribute('name', 'theme-color'); document.head.appendChild(m); }
+    m.setAttribute('content', id === 'dark' ? '#0f1115' : th.sw[2]);
+  } catch (e) { /* 화면이 없는 환경 */ }
+  return id;
+}
+function syncTheme() {
+  const co = S.settings && S.settings.theme && S.settings.theme.default;
+  if (validTheme(co)) lsSet('hr_theme_company', co);
+  applyTheme();
+}
+const themeCard = (t, on, action) => `<button class="themecard ${on ? 'on' : ''}" data-a="${action}" data-k="${t.id}" aria-pressed="${on}"><span class="swatch">${t.sw.map((c) => `<i style="background:${c}"></i>`).join('')}</span><b>${esc(t.name)}</b><span class="muted small">${esc(t.desc)}</span>${on ? '<span class="chip ok">사용 중</span>' : ''}</button>`;
+
+/* ---------- 팀 스케줄 ---------- */
+const TPAL = ['#2563eb', '#0f9d94', '#d4580a', '#7c3aed', '#be185d', '#15803d', '#b45309', '#0369a1'];
+const hashStr = (v) => { let h = 0; for (const c of String(v)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
+const pcolor = (id) => TPAL[hashStr(id) % TPAL.length];
+const isDesk = () => typeof window !== 'undefined' && window.innerWidth >= 900;
+const fmtHM = (m) => { m = Math.round(m); if (m <= 0) return '0m'; const h = Math.floor(m / 60), r = m % 60; return h ? `${h}h${r ? ` ${r}m` : ''}` : `${r}m`; };
+function newTeamState() { return { view: null, day: null, y: null, m: null, from: null, to: null, rows: null, people: [], sel: null, org: 'all', showWork: true, showLeave: true, rng: null, fix: false, statDate: null }; }
+S.team = newTeamState();
+
+async function loadTeam() {
+  const T = S.team;
+  if (!T.day) { T.day = S.today; T.y = +S.today.slice(0, 4); T.m = +S.today.slice(5, 7); }
+  if (!T.view) T.view = isDesk() ? 'month' : 'day';
+  const [a, b] = gridRange({ y: T.y, m: T.m });
+  const rows = await rpc('team_schedule', { p_from: a, p_to: b });
+  T.from = a; T.to = b; T.rows = rows;
+  T.people = rows.filter((r) => r.kind === 'person').map((r) => ({ id: r.user_id, name: r.name, org_id: r.org_id })).sort((x, y) => x.name.localeCompare(y.name));
+  if (!T.sel) { const mine = T.people.filter((p) => p.org_id === S.me.org_id).map((p) => p.id); T.sel = new Set(mine.length >= 2 ? mine : T.people.slice(0, 15).map((p) => p.id)); }
+}
+function teamRange() {
+  const T = S.team;
+  if (!T.rng || !T.fix) T.rng = { from: `${T.y}-${p2(T.m)}-01`, to: `${T.y}-${p2(T.m)}-${p2(daysInMonth(T.y, T.m))}` };
+  return T.rng;
+}
+async function loadTeamAll() {
+  await loadTeam(); const r = teamRange(); await ensureRange(r.from, r.to);
+  if (!S.lvx.grants) await loadLeaveX();
+}
+function statsFor(from, to) {
+  let sched = 0, appr = 0, actual = 0, leave = 0; const dayMin = S.policy.leaveHoursPerDay * 60;
+  for (let d = from; d <= to; d = addDays(d, 1)) {
+    if (isWorkday(d)) sched += dayMin;
+    const sc = S.sched[d]; if (sc) appr += Math.max(0, toMinutes(sc.end) - toMinutes(sc.start) - S.policy.breakMinutes);
+    actual += dailyWorkMinutes(recordDone(S.recs[d]), S.policy); leave += leaveMin(d);
+  }
+  return { sched, appr, actual, leave, apprPaid: appr + leave, actualPaid: actual + leave };
+}
+const hh = (t) => String(t).slice(0, 5);
+function teamSide(T) {
+  const r = teamRange(), st = statsFor(r.from, r.to), sd = T.statDate || S.today, L = S.lvx.grants && S.lvx.days ? leaveX(sd) : null;
+  const row = (l, v) => `<div class="row"><b>${l}</b><span>${fmtHM(v)}</span></div>`;
+  return `<aside class="tside" aria-label="내 통계"><h3>내 근로 통계</h3>
+    <div class="rng"><input type="date" value="${r.from}" data-c="trf" aria-label="시작일"><span>~</span><input type="date" value="${r.to}" data-c="trt" aria-label="종료일"></div>
+    <label class="fix"><input type="checkbox" data-c="trfix" ${T.fix ? 'checked' : ''}> 기간 고정</label>
+    ${row('소정근로시간', st.sched)}${row('승인된 근로시간', st.appr)}${row('실제 근로시간', st.actual)}${row('유급휴가시간', st.leave)}${row('승인된 유급시간', st.apprPaid)}${row('실제 유급시간', st.actualPaid)}
+    <hr><h3>내 휴가 통계</h3><div class="rng"><input type="date" value="${sd}" data-c="tsd" aria-label="휴가 통계 기준일"></div>
+    ${L ? `<table><thead><tr><th>휴가 그룹</th><th>총</th><th>사용</th><th>잔여</th></tr></thead><tbody><tr><td>1. 연차휴가</td><td>${fmtN(L.total)}</td><td>${fmtN(L.used)}</td><td class="g">${fmtN(L.remaining)}</td></tr>${L.etc.length ? `<tr><td>2. 기타</td><td>${fmtN(L.etcSum.total)}</td><td>${fmtN(L.etcSum.used)}</td><td class="g">${fmtN(L.etcSum.remain)}</td></tr>` : ''}</tbody></table>` : spinner}</aside>`;
+}
+function teamEntries(T) {
+  const sel = new Set(T.people.filter((p) => T.sel.has(p.id) && (T.org === 'all' || p.org_id === T.org)).map((p) => p.id));
+  const by = {}, seen = new Set();
+  if (T.showLeave) for (const r of T.rows) if (r.kind === 'leave' && sel.has(r.user_id)) { const k = `${r.user_id}|${r.work_date}|${r.leave_type}`; if (seen.has(k)) continue; seen.add(k); (by[r.work_date] ||= []).push({ k: 'lv', ...r }); }
+  if (T.showWork) for (const r of T.rows) if (r.kind === 'work' && sel.has(r.user_id)) (by[r.work_date] ||= []).push({ k: 'wk', ...r });
+  for (const d of Object.keys(by)) by[d].sort((a, b) => (a.k === b.k ? (hh(a.start_time || '') + a.name).localeCompare(hh(b.start_time || '') + b.name) : a.k === 'lv' ? -1 : 1));
+  return { by, count: sel.size };
+}
+const tevHtml = (e) => (e.k === 'lv'
+  ? `<div class="tev lv">✈ <b>${esc(e.name)}</b> <span class="t">| ${esc(e.leave_type)}</span></div>`
+  : `<div class="tev"><i class="tdot" style="background:${pcolor(e.user_id)}"></i><b>${esc(e.name)}</b> <span class="t">${hh(e.start_time)}-${hh(e.end_time)}</span></div>`);
+function teamScreen() {
+  const T = S.team;
+  if (!T.rows || !T.sel) return { header: header({ title: '스케줄' }), cls: 'wide', body: spinner };
+  const view = T.view || 'month', { by, count } = teamEntries(T), today = S.today;
+  const ws = weekStartOf(T.day), title = view === 'month' ? `${T.y} ${T.m}월` : view === 'week' ? `${md(ws)} - ${md(addDays(ws, 6))}` : kdate(T.day);
+  const nFilter = (T.showWork ? 1 : 0) + (T.showLeave ? 1 : 0) + (T.org !== 'all' ? 1 : 0);
+  const cell = (d, other) => { const es = by[d] || [], n = new Set(es.map((e) => e.user_id)).size; return `<button class="tcell ${other ? 'other' : ''}" data-a="teamDay" data-d="${d}" aria-label="${d}"><span class="tdn ${d === today ? 'today' : ''} ${dayOfWeek(d) === 0 || isHoliday(d) ? 'red' : ''}">${+d.slice(8, 10) === 1 ? `${+d.slice(5, 7)}/1` : +d.slice(8, 10)}</span>${es.map(tevHtml).join('')}${n ? `<span class="tcount">${n}명</span>` : ''}</button>`; };
+  let cal;
+  if (view === 'day') {
+    const es = by[T.day] || [];
+    cal = `<div class="tday">${es.map((e) => (e.k === 'lv' ? `<div class="tr lv">✈ <b>${esc(e.name)}</b><span class="t">${esc(e.leave_type)}</span></div>` : `<div class="tr"><i class="tdot" style="background:${pcolor(e.user_id)};width:9px;height:9px;border-radius:50%"></i><b>${esc(e.name)}</b><span class="muted small">${esc(orgOf(e.org_id)?.name ?? '')}</span><span class="t">${hh(e.start_time)} - ${hh(e.end_time)}</span></div>`)).join('') || '<div class="empty">이 날짜에 표시할 일정이 없습니다.</div>'}</div>`;
+  } else {
+    const dates = view === 'month' ? gridDates({ y: T.y, m: T.m }) : Array.from({ length: 7 }, (_, i) => addDays(ws, i));
+    cal = `<div class="tcal ${view === 'week' ? 'wk' : ''}">${DOW.map((d, i) => `<div class="tdow ${i === 0 ? 'sun' : ''}">${d}</div>`).join('')}${dates.map((d) => cell(d, view === 'month' && +d.slice(5, 7) !== T.m)).join('')}</div>`;
+  }
+  const main = `<div class="tmain"><div class="tbar"><div class="tnav"><button class="ib sq" data-a="teamNav" data-n="-1" aria-label="이전">${ico('back')}</button><button class="ib sq" data-a="teamNav" data-n="1" aria-label="다음">${ico('chev')}</button><button class="btn sm" data-a="teamToday">오늘</button><h2 class="ttl">${title}</h2></div>
+      <div class="tact"><button class="btn sm green" data-a="leaveNew">✈ 휴가 생성 요청</button><button class="btn sm blue" data-a="schedNew">근무일정 생성 요청</button><button class="btn sm line" data-a="schedNew">근무일정 수정 요청</button></div></div>
+    <div class="tbar2"><div class="l"><button class="btn sm" data-a="sheet" data-k="teamPeople">${count} 선택됨 ▾</button><button class="btn sm" data-a="sheet" data-k="teamFilter">필터 (${nFilter}) ▾</button></div>
+      <div class="seg3" role="group" aria-label="보기">${[['day', '일'], ['week', '주'], ['month', '월']].map(([k, l]) => `<button class="${view === k ? 'on' : ''}" data-a="teamView" data-k="${k}" aria-pressed="${view === k}">${l}</button>`).join('')}</div></div>${cal}</div>`;
+  return { header: header({ title: '스케줄' }), cls: 'wide', body: `<div class="tgrid">${main}${teamSide(T)}</div>` };
+}
+TABS.team = teamScreen;
+
+/* ----- 시트: 화면 테마 · 팀 선택 · 팀 필터 ----- */
+function extraSheet2(sh, wrap) {
+  const close = '<button class="si" data-a="closeSheet">닫기</button>';
+  if (sh.k === 'theme') {
+    const mine = lsGet('hr_theme'), co = resolveCompanyTheme();
+    return wrap(`<div class="sh" style="font-weight:700;color:var(--text)">화면 테마</div><div style="padding:0 16px 8px"><div class="muted small" style="margin-bottom:10px">내 기기에서만 적용됩니다. 회사 기본: ${esc((THEMES.find((t) => t.id === co) || THEMES[0]).name)}</div>
+      <div class="themegrid sm">${themeCard({ id: 'company', name: '회사 기본값 따르기', desc: '관리자가 정한 테마', sw: (THEMES.find((t) => t.id === co) || THEMES[0]).sw }, !mine || !validTheme(mine), 'themeUser')}${THEMES.map((t) => themeCard(t, mine === t.id, 'themeUser')).join('')}</div></div>${close}`);
+  }
+  if (sh.k === 'teamPeople') {
+    const T = S.team;
+    return wrap(`<div class="sh" style="font-weight:700;color:var(--text)">${T.sel.size}명 선택됨</div><div class="btns" style="margin:0 16px 8px"><button class="btn sm" data-a="teamAll">전체 선택</button><button class="btn sm" data-a="teamMine">내 조직</button><button class="btn sm" data-a="teamNone">모두 해제</button></div>
+      <div class="plist" style="max-height:48vh;overflow:auto">${T.people.map((p) => `<label class="si" style="gap:12px;justify-content:flex-start"><input type="checkbox" data-a="teamPick" data-id="${p.id}" ${T.sel.has(p.id) ? 'checked' : ''}><i style="width:10px;height:10px;border-radius:50%;background:${pcolor(p.id)};flex:none"></i><span>${esc(p.name)}</span><span class="muted small" style="margin-left:auto">${esc(orgOf(p.org_id)?.name ?? '')}</span></label>`).join('')}</div>${close}`);
+  }
+  if (sh.k === 'teamFilter') {
+    const T = S.team, orgs = [...new Set(T.people.map((p) => p.org_id))].map((id) => orgOf(id)).filter(Boolean);
+    return wrap(`<div class="sh" style="font-weight:700;color:var(--text)">필터</div><div style="padding:0 20px 8px"><label style="display:flex;gap:10px;margin:8px 0"><input type="checkbox" data-a="teamToggle" data-k="showWork" ${T.showWork ? 'checked' : ''}> 근무일정 표시</label><label style="display:flex;gap:10px;margin:8px 0"><input type="checkbox" data-a="teamToggle" data-k="showLeave" ${T.showLeave ? 'checked' : ''}> 휴가 표시</label></div>
+      <div class="sh">조직</div><button class="si ${T.org === 'all' ? 'on' : ''}" data-a="teamOrg" data-id="all">전체</button>${orgs.map((o) => `<button class="si ${T.org === o.id ? 'on' : ''}" data-a="teamOrg" data-id="${o.id}">${esc(o.name)}</button>`).join('')}${close}`);
+  }
+  return extraSheetBase(sh, wrap);
+}
+function resolveCompanyTheme() { const co = (S.settings && S.settings.theme && S.settings.theme.default) || lsGet('hr_theme_company'); return validTheme(co) ? co : 'light'; }
+
+/* ----- 동작: 테마 · 팀 스케줄 ----- */
+const keepScroll = (sel, fn) => { let st = 0; try { const b = document.querySelector(sel); st = b ? b.scrollTop : 0; } catch (e) { /* */ } fn(); try { const b = document.querySelector(sel); if (b) b.scrollTop = st; } catch (e) { /* */ } };
+async function teamGoto(d, ym) {
+  const T = S.team, y = ym ? ym.y : +d.slice(0, 4), m = ym ? ym.m : +d.slice(5, 7), changed = y !== T.y || m !== T.m || d < T.from || d > T.to;
+  T.day = d; T.y = y; T.m = m;
+  if (changed) { render(); await loadTeam(); const r = teamRange(); await ensureRange(r.from, r.to); }
+  render();
+}
+Object.assign(C, {
+  trf: (el) => guard(async () => { const T = S.team, r = teamRange(); if (!el.value || el.value > r.to) return toast('시작일이 종료일보다 늦을 수 없습니다.'); T.rng = { from: el.value, to: r.to }; await ensureRange(T.rng.from, T.rng.to); render(); }),
+  trt: (el) => guard(async () => { const T = S.team, r = teamRange(); if (!el.value || el.value < r.from) return toast('종료일이 시작일보다 빠를 수 없습니다.'); T.rng = { from: r.from, to: el.value }; await ensureRange(T.rng.from, T.rng.to); render(); }),
+  trfix: (el) => { S.team.fix = !!el.checked; render(); },
+  tsd: (el) => { S.team.statDate = el.value || null; render(); },
+});
+Object.assign(A, {
+  themeUser: (e) => { lsSet('hr_theme', e.k === 'company' ? null : e.k); applyTheme(); keepScroll('.sheet', render); },
+  themeCompany: (e) => guard(async () => { need(); await saveSetting('theme', { default: e.k }); lsSet('hr_theme_company', e.k); applyTheme(); render(); toast(`회사 기본 테마를 “${(THEMES.find((t) => t.id === e.k) || {}).name}”(으)로 바꿨습니다.`); }),
+  teamNav: (e) => guard(async () => {
+    const T = S.team, n = +e.n;
+    if (T.view === 'month') { const c = shiftMonth({ y: T.y, m: T.m }, n), cur = +S.today.slice(0, 4) === c.y && +S.today.slice(5, 7) === c.m; await teamGoto(cur ? S.today : `${c.y}-${p2(c.m)}-01`, c); }
+    else await teamGoto(addDays(T.day, (T.view === 'week' ? 7 : 1) * n));
+  }),
+  teamToday: () => guard(async () => { await teamGoto(S.today); }),
+  teamView: (e) => { S.team.view = e.k; render(); },
+  teamDay: (e) => { S.team.day = e.d; if (!isDesk()) S.team.view = 'day'; render(); },
+  teamPick: (e, ev) => { const T = S.team, on = !!(ev && ev.target && ev.target.checked); if (on) T.sel.add(e.id); else T.sel.delete(e.id); keepScroll('.sheet .plist', render); },
+  teamAll: () => { const T = S.team; T.sel = new Set(T.people.map((p) => p.id)); keepScroll('.sheet .plist', render); },
+  teamMine: () => { const T = S.team; T.sel = new Set(T.people.filter((p) => p.org_id === S.me.org_id).map((p) => p.id)); keepScroll('.sheet .plist', render); },
+  teamNone: () => { S.team.sel = new Set(); keepScroll('.sheet .plist', render); },
+  teamOrg: (e) => { S.team.org = e.id; S.sheet = null; render(); },
+  teamToggle: (e, ev) => { S.team[e.k] = !!(ev && ev.target && ev.target.checked); render(); },
+});
+syncTheme();
 
 document.addEventListener('click', (e) => {
   if (e.target.closest('[data-stop]') && !e.target.closest('[data-a]')) return;
